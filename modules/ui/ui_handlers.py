@@ -1,11 +1,11 @@
 # ui_handlers.py
 # Module to handle user interface interactions for the solar system simulation
-# v.1.6 - Adjusted scaling logic for planet sizes based on current zoom level
+# v.1.7 - Adjusted scaling logic for planet sizes based on current zoom level
 # author: kuranez
 
 # Importing necessary libraries
-import panel as pn
-import constants # For building the web interface
+import panel as pn # For building the web interface
+import constants # For simulation constants like scale and colors
 from simulation.solarsystem_scale import calculate_scaled_sizes # For updating body sizes based on current scale
 from .screen import pygame_surface_to_PNGbuf, draw_frame # For rendering the simulation and converting to PNG for Panel display
 

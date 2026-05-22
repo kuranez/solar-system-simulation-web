@@ -1,12 +1,14 @@
 # solar_system.py
 # Main module for the solar system simulation web app
-# v.1.0 - Initial version with basic structure and imports
+# v.1.1 - Tweaked comments and structure for better readability
 # author: kuranez
 
-import constants
-from simulation.solarsystem_sim import Planet, Sun
-from simulation.solarsystem_scale import calculate_scaled_sizes
+# Importing necessary libraries and modules
+import constants # For simulation constants like scale and colors
+from simulation.solarsystem_sim import Planet, Sun # For defining celestial bodies
+from simulation.solarsystem_scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
 
+# Function to create the solar system with the Sun, planets
 def create_solar_system():
     """Creates the solar system with the Sun, planets"""
     # Calculate scaled sizes for all planets based on current scale

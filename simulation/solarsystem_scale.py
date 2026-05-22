@@ -1,20 +1,13 @@
 # solarsystem_scale.py
 # Module to handle scaling of planet sizes based on current zoom level in the solar system simulation
-# v.1.1 - Adjusted for scaled sizes based on current scale
+# v.1.2 - Tweaked comments and structure for better readability
 # author: kuranez
 
+# Importing necessary libraries and modules
 import constants
 import math
 
 # Scale calculations
-
-# def scale_planet_size(planet_radius, distance_scale, is_outer_planet=False):
-#     """Scale the planet size based on Earth diameter and current scale (zoom)."""
-#     diameter = planet_radius * 2
-#     scale_factor = constants.OUTER_PLANET_SCALE_FACTOR if is_outer_planet else 1
-#     # Multiply by scale so planet size grows/shrinks with zoom
-#     return (diameter / constants.earth_diameter) * constants.BASE_SIZE * scale_factor * distance_scale / constants.DEFAULT_SCALE
-
 def scale_planet_size(planet_radius, distance_scale, is_outer_planet=False):
     diameter = planet_radius * 2
 

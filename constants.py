@@ -1,9 +1,10 @@
 # constants.py 
 # Contains all constants used across the solar system simulation app, including display settings, physical constants, and planetary data.
-# v.1.2 - Adjusted display style and scaling Constants 
+# v.1.3 - Tweaked comments and structure for better readability
 
-import pygame
-import math
+# Importing necessary libraries and modules
+import pygame # For rendering the simulation
+import math # For mathematical calculations
 
 # Initialize Pygame and Font
 pygame.init()

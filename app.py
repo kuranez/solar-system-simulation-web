@@ -4,7 +4,8 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.7 - Live Simulation with Play/Pause and Zoom
+# version: 1.8 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
+# Update Log: Tweaked CSS for better appearance, added multiple views
 # author: kuranez
 
 # Importing system libraries
@@ -30,9 +31,11 @@ import constants # For simulation constants like scale and colors
 from simulation.solarsystem_sim import Planet, Sun
 from modules.solar_system import create_solar_system
 from modules.sun_and_earth import create_sun_and_earth
+
+# Importing UI handlers and CSS
+from modules.ui.css import CUSTOM_SELECT_CSS
 from modules.ui.screen import pygame_surface_to_PNGbuf, draw_frame 
 from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
-
 
 # Initialize Panel extension
 pn.extension()
@@ -43,18 +46,21 @@ width, height = 1600, 740  # Default dimensions, can be adjusted as needed
 screen = pygame.Surface((width, height))
 screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 
-# Solar system initialization
-solarsystem = create_solar_system()
-# major_asteroids = create_major_asteroids()
-# asteroids = create_asteroid_belt(num_asteroids=200)
-# current_solarsystem = solarsystem + major_asteroids + asteroids
+# Simulation setup
+SIMULATION_VIEWS = {
+    "Sun and Earth System": {
+        "title": "Sun and Earth System",
+        "generator": create_sun_and_earth
+    },
+    "Full Solar System": {
+        "title": "Full Solar System",
+        "generator": create_solar_system
+    }
+}
 
-# Assign individual planet variables
-sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune = solarsystem
+initial_view_name = "Full Solar System"
+current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
 
-current_solarsystem = solarsystem
-
-# current_solarsystem = create_sun_and_earth()
 
 # State variables for app
 # ---------------------------------------------
@@ -62,28 +68,56 @@ current_solarsystem = solarsystem
 state = {
     'is_playing': False,
     'callback': None,
-    # 'scale': constants.DEFAULT_SCALE,
-    
-    # orbital zoom
-    'distance_scale': constants.DEFAULT_SCALE,
-
-    # visual planet scaling
-    'planet_scale': 1.0,
-
+    'distance_scale': constants.DEFAULT_SCALE, # orbital distance scaling
+    'planet_scale': 1.0, # planet size scaling (can be adjusted separately if needed)
     'offset_x': width // 2,
     'offset_y': height // 2,
 }
 
 # Controls for Panel UI
 # ---------------------------------------------
+
+# Selection of predefined views (e.g., Sun & Earth, Full Solar System)
+view_select = pn.widgets.Select(
+    name="Select Simulation", 
+    options=list(SIMULATION_VIEWS.keys()),
+    value=initial_view_name, # Set the default value
+    width=350,
+    stylesheets=[CUSTOM_SELECT_CSS]
+)
+
 # Buttons for controling the simulation
 step_button = pn.widgets.Button(name="Next Frame", button_type="primary")
 play_button = pn.widgets.Button(name="Play", button_type="success")
 zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
+
 # Initial render of the simulation frame
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
+
+# Callback functions
+def update_view(event):
+    """
+    Handles changes in the view_select dropdown.
+    Switches the simulation, updates the title, and redraws.
+    """
+    global current_solarsystem
+    view_name = event.new  # The new value from the dropdown
+    
+    # Stop the current simulation if it's playing
+    if state['is_playing']:
+        play_pause(None, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button)
+
+    # Load the new set of celestial bodies
+    current_solarsystem = SIMULATION_VIEWS[view_name]["generator"]()
+    
+    # Redraw the scene with the new system
+    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND)
+    img_pane.object = pygame_surface_to_PNGbuf(screen)
+
+# Attach the callback to the view selector
+view_select.param.watch(update_view, 'value')
 
 # Attach event handlers to buttons
 step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state, constants.COLOR_BACKGROUND, img_pane))
@@ -93,15 +127,14 @@ zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsyste
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row (play_button, step_button, zoom_in_button, zoom_out_button, align="center")
+controls = pn.Row (play_button, step_button, zoom_in_button, zoom_out_button, view_select, align="center")
 app = pn.Column(controls, img_pane, align="center")
 
 # Use HSpacer to center the content
 centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
 
 template = MaterialTemplate(
-    site="Earth and Sun",
-    title="Solar System Simulation",
+    title= "Solar System Simulation",
     theme=DarkTheme,
     header_background="#422C71",
     sidebar_width=0,

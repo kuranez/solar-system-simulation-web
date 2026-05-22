@@ -1,15 +1,14 @@
 # solarsystem_sim.py
 # Main module for the solar system simulation logic
 # Contains classes for celestial bodies (Sun, Planet, Asteroid) and their physics
-# v.1.1 - Adjusted for scaled sizes based on current scale
+# v.1.2 - Tweaked comments and structure for better readability,
 # author: kuranez
 
-from turtle import color
-
-import constants
-import pygame
-import math
-import itertools
+# Importing necessary libraries and modules
+import constants # For simulation constants like scale and colors
+import pygame # For rendering the simulation
+import math # For mathematical calculations
+import itertools # For cycling through colors for planets
 
 
 # Solar system bodies
