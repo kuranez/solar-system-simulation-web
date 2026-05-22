@@ -1,10 +1,10 @@
-# Solar System Simulation Web (step-by-step)
+# Solar System Simulation Web - Panel UI with Pygame Rendering
 
-# This is a Panel-based web application that simulates the solar system step-by-step.
+# This is a Panel-based web application that simulates the solar system.
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
-# the Sun, planets, and an asteroid belt. Users can advance the simulation one frame at a time by clicking a button.
+# the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.2 - Live Simulation with Play/Pause (Sun and Earth only for now)
+# version: 1.3 - Live Simulation with Play/Pause (Sun and Earth only for now)
 # author: kuranez
 
 # Importing system libraries
@@ -18,9 +18,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'modu
 
 # Importing necessary libraries
 import numpy as np # For numerical operations and array handling
-import panel as pn # For building the web interface
 from PIL import Image # For image processing and conversion between Pygame surfaces and PNG format
 import pygame # For off-screen rendering of the solar system simulation
+
+import panel as pn # For building the web interface
+from panel.template import MaterialTemplate
+from panel.theme import DarkTheme
 
 # Importing from the simulation package
 import constants
@@ -82,9 +85,13 @@ app = pn.Column(controls, img_pane, align="center")
 # Use HSpacer to center the content
 centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
 
-template = pn.template.VanillaTemplate(
-    title="Solar System Simulation Web",
+template = MaterialTemplate(
+    site="Earth and Sun",
+    title="Solar System Simulation",
+    theme=DarkTheme,
+    header_background="#422C71",
     sidebar_width=0,
+    # favicon="path/to/your/icon.png"  # Replace with the actual path to your icon
 )
 template.main.append(centered_layout)
 

@@ -1,6 +1,6 @@
 # ui_handlers.py
 # Module to handle user interface interactions for the solar system simulation
-# v.1.0 - Initial creation
+# v.1.1 - Refactored from app.py
 
 # Importing necessary libraries
 import panel as pn
