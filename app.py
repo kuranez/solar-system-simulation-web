@@ -4,7 +4,7 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.4 - Live Simulation with Play/Pause and Zoom(Sun and Earth only for now)
+# version: 1.5 - Live Simulation with Play/Pause and Zoom(Sun and Earth only for now)
 # author: kuranez
 
 # Importing system libraries
@@ -29,8 +29,8 @@ from panel.theme import DarkTheme
 import constants
 from simulation.solarsystem_sim import Planet, Sun
 from modules.sun_and_earth import create_sun_and_earth
-from modules.screen import pygame_surface_to_PNGbuf, draw_frame 
-from modules.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
+from modules.ui.screen import pygame_surface_to_PNGbuf, draw_frame 
+from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
 
 
 # Initialize Panel extension

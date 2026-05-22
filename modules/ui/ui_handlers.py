@@ -1,6 +1,6 @@
 # ui_handlers.py
 # Module to handle user interface interactions for the solar system simulation
-# v.1.2 - Buttons for Play/Pause, Zoom In/Out, and periodic updates for live simulation
+# v.1.3 - Buttons for Play/Pause, Zoom In/Out, and periodic updates for live simulation
 
 # Importing necessary libraries
 import panel as pn
@@ -59,10 +59,11 @@ def zoom_in(event, state, bodies, screen, img_pane):
     # Increase scale
     state['scale'] *= 1.1
     # Ensure scale is within a reasonable range
-    state['scale'] = min(state['scale'], constants.DEFAULT_SCALE * 10)
+    state['scale'] = min(state['scale'], constants.DEFAULT_SCALE * 0.05)
     
     # Recalculate planet sizes and redraw the frame
     update_body_radii(bodies, state['scale'])
+
     # obtain background color from state (fallback to black)
     color_bg = state.get('color_bg')
     draw_frame(screen, bodies, state['scale'], state['offset_x'], state['offset_y'], color_bg)
@@ -73,7 +74,7 @@ def zoom_out(event, state, bodies, screen, img_pane):
     # Decrease scale
     state['scale'] /= 1.1
     # Ensure scale is within a reasonable range
-    state['scale'] = max(state['scale'], constants.DEFAULT_SCALE * 0.05)
+    state['scale'] = max(state['scale'], constants.DEFAULT_SCALE * 10)
 
     # Recalculate planet sizes and redraw the frame
     update_body_radii(bodies, state['scale'])

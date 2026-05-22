@@ -1,6 +1,6 @@
 # screen.py
 #  Handles off-screen rendering of the solar system simulation using Pygame and conversion to PNG for Panel display
-# v.1.2 - Refactored from non-web version of the app, added HUD rendering and Scaling
+# v.1.3 - Refactored from non-web version of the app, added HUD rendering and Scaling
 
 # Importing necessary libraries
 import io
