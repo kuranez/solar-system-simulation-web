@@ -4,13 +4,15 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.5 - Live Simulation with Play/Pause and Zoom(Sun and Earth only for now)
+# version: 1.6 - Live Simulation with Play/Pause and Zoom
 # author: kuranez
 
 # Importing system libraries
 import io # For in-memory byte streams
 import sys # For modifying the Python path to include the simulation package
-import os # For handling file paths
+import os
+
+from modules.solar_system import create_solar_system # For handling file paths
 
 # Add directories to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
@@ -26,8 +28,9 @@ from panel.template import MaterialTemplate
 from panel.theme import DarkTheme
 
 # Importing from the simulation package
-import constants
+import constants # For simulation constants like scale and colors
 from simulation.solarsystem_sim import Planet, Sun
+from modules.solar_system import create_solar_system
 from modules.sun_and_earth import create_sun_and_earth
 from modules.ui.screen import pygame_surface_to_PNGbuf, draw_frame 
 from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
@@ -42,14 +45,18 @@ width, height = 1600, 740  # Default dimensions, can be adjusted as needed
 screen = pygame.Surface((width, height))
 screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 
-# Solar system initialization, FULL (later)
-# solarsystem = create_solarsystem()
+# Solar system initialization
+solarsystem = create_solar_system()
 # major_asteroids = create_major_asteroids()
 # asteroids = create_asteroid_belt(num_asteroids=200)
 # current_solarsystem = solarsystem + major_asteroids + asteroids
 
-# Solar system initialization, Sun and Earth (only for now)
-current_solarsystem = create_sun_and_earth()
+# Assign individual planet variables
+sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune = solarsystem
+
+current_solarsystem = solarsystem
+
+# current_solarsystem = create_sun_and_earth()
 
 # State variables for app
 # ---------------------------------------------

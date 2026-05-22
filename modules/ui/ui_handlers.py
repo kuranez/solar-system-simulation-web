@@ -5,8 +5,7 @@
 
 # Importing necessary libraries
 import panel as pn
-
-from simulation import constants # For building the web interface
+import constants # For building the web interface
 from simulation.solarsystem_scale import calculate_scaled_sizes # For updating body sizes based on current scale
 from .screen import pygame_surface_to_PNGbuf, draw_frame # For rendering the simulation and converting to PNG for Panel display
 

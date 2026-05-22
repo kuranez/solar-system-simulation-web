@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 import pygame
 from .hud import render_hud
-import simulation.constants as constants
+import constants
 
 
 # Function to create the Pygame screen (off-screen)

@@ -3,7 +3,7 @@
 # v.1.1 - Adjusted for scaled sizes based on current scale, refactored to use constants for Earth data
 # author: kuranez
 
-from simulation import constants
+import constants
 from simulation.solarsystem_sim import Planet, Sun
 from simulation.solarsystem_scale import calculate_scaled_sizes
 
