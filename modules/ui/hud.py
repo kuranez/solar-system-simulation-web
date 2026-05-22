@@ -1,20 +1,32 @@
-# hud.py - Handles rendering of informational text overlays (HUD)
-# v.1.3 - Refactored from non-web version of the app
+# hud.py 
+# Handles rendering of informational text overlays (HUD)
+# v.1.4 - Adjusted scaling showing actual meters per pixel based on current distance scale
+# author: kuranez
 
 # Importing necessary libraries
 import pygame # For rendering text on the screen
 import constants as constants # For HUD text color and other constants
 
 
-def render_hud(screen, bodies):
+def render_hud(screen, bodies, distance_scale):
     """Renders the Heads-Up Display (HUD) with information about the simulation."""
     
     y_offset = 0  # Initial vertical offset for text lines
 
-    # Display the current scale of the simulation
-    scale_text = f"Scale: {constants.DEFAULT_SCALE:.2e} m/px"
-    scale_surface = constants.FONT_1.render(scale_text, True, constants.COLOR_HUD_TEXT)
-    screen.blit(scale_surface, (10, 10 + y_offset))
+    # Display the current scale of the simulation in meters per pixel
+    meters_per_pixel = constants.AU / distance_scale
+
+    scale_text = (
+        f"Scale: {meters_per_pixel:.2e} m/px"
+    )
+
+    text_surface = constants.FONT_1.render(
+        scale_text,
+        True,
+        constants.COLOR_HUD_TEXT
+    )
+
+    screen.blit(text_surface, (10, 10))
 
     y_offset += 20 # Move down for the next line of text
 

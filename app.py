@@ -4,7 +4,7 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.6 - Live Simulation with Play/Pause and Zoom
+# version: 1.6a - Live Simulation with Play/Pause and Zoom
 # author: kuranez
 
 # Importing system libraries
@@ -64,7 +64,14 @@ current_solarsystem = solarsystem
 state = {
     'is_playing': False,
     'callback': None,
-    'scale': constants.DEFAULT_SCALE,
+    # 'scale': constants.DEFAULT_SCALE,
+    
+    # orbital zoom
+    'distance_scale': constants.DEFAULT_SCALE,
+
+    # visual planet scaling
+    'planet_scale': 1.0,
+
     'offset_x': width // 2,
     'offset_y': height // 2,
 }
@@ -81,10 +88,10 @@ zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
 
 # Attach event handlers to buttons
-step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state['scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane))
-play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, state['scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane, play_button))
-zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, img_pane))
-zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, img_pane))
+step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane))
+play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane, play_button))
+zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
+zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 
 # Layout for Panel UI
 # ---------------------------------------------

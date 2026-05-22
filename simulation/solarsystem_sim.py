@@ -1,4 +1,8 @@
 # solarsystem_sim.py
+# Main module for the solar system simulation logic
+# Contains classes for celestial bodies (Sun, Planet, Asteroid) and their physics
+# v.1.1 - Adjusted for scaled sizes based on current scale
+# author: kuranez
 
 from turtle import color
 
@@ -103,19 +107,19 @@ class Body:
         if len(self.orbit) > general_trail_length:
             self.orbit.pop(0)
 
-    def draw(self, DISPLAYSURF, scale, screen_offset_x=0, screen_offset_y=0):
+    def draw(self, DISPLAYSURF, distance_scale, screen_offset_x=0, screen_offset_y=0):
         """Draw the body and its faded orbit trail."""
         # Calculate position on screen
-        x = self.x * scale + screen_offset_x
-        y = self.y * scale + screen_offset_y
+        x = self.x * distance_scale + screen_offset_x
+        y = self.y * distance_scale + screen_offset_y
 
         # Draw the faded orbit trail
         if self.draw_line and len(self.orbit) >= 2:
             fade_scale = 1.5  # Adjust this value to control brightness
             orbit_points = [
                 (
-                    px * scale + screen_offset_x,
-                    py * scale + screen_offset_y
+                    px * distance_scale + screen_offset_x,
+                    py * distance_scale + screen_offset_y
                 )
                 for px, py in self.orbit
             ]
@@ -142,8 +146,8 @@ class Sun(Body):
         self.color = constants.COLOR_SUN
         self.orbit_count = 0  # Sun doesn't orbit but needs the attribute
 
-    def draw(self, DISPLAYSURF, scale, screen_offset_x=0, screen_offset_y=0):
-        super().draw(DISPLAYSURF, scale, screen_offset_x, screen_offset_y)
+    def draw(self, DISPLAYSURF, distance_scale, screen_offset_x=0, screen_offset_y=0):
+        super().draw(DISPLAYSURF, distance_scale, screen_offset_x, screen_offset_y)
 
 
 # Planets
@@ -244,11 +248,11 @@ class Planet(Body):
             elif distance_to_start > threshold * 2:
                 self.orbit_detected = False
 
-    def draw(self, DISPLAYSURF, scale, screen_offset_x=0, screen_offset_y=0):
+    def draw(self, DISPLAYSURF, distance_scale, screen_offset_x=0, screen_offset_y=0):
         """Draw the body with its orbit trail."""
         # Calculate position on screen
-        x = self.x * scale + screen_offset_x
-        y = self.y * scale + screen_offset_y
+        x = self.x * distance_scale + screen_offset_x
+        y = self.y * distance_scale + screen_offset_y
         
         # Draw orbit trail with fade effect
         if self.draw_line and len(self.orbit) >= 2:
@@ -259,8 +263,8 @@ class Planet(Body):
             fade_scale = 1.0  # Adjust this value to control brightness
             orbit_points = [
                 (
-                    px * scale + screen_offset_x,
-                    py * scale + screen_offset_y
+                    px * distance_scale + screen_offset_x,
+                    py * distance_scale + screen_offset_y
                 )
                 for px, py in self.orbit
             ]
@@ -305,10 +309,10 @@ class Asteroid(Body):
         self.color = color  # Set asteroid color
         self.draw_line = False # Asteroids don't need orbit trails
 
-    def draw(self, DISPLAYSURF, scale, screen_offset_x=0, screen_offset_y=0):
+    def draw(self, DISPLAYSURF, distance_scale, screen_offset_x=0, screen_offset_y=0):
         """Optimized draw for asteroids"""
-        x = self.x * scale + screen_offset_x
-        y = self.y * scale + screen_offset_y
+        x = self.x * distance_scale + screen_offset_x
+        y = self.y * distance_scale + screen_offset_y
         
         # Only draw if on screen (culling)
         if 0 <= x <= constants.WIDTH and 0 <= y <= constants.HEIGHT:

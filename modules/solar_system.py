@@ -1,6 +1,7 @@
 # solar_system.py
 # Main module for the solar system simulation web app
 # v.1.0 - Initial version with basic structure and imports
+# author: kuranez
 
 import constants
 from simulation.solarsystem_sim import Planet, Sun
