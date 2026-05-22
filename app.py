@@ -4,7 +4,7 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.4 - Live Simulation with Play/Pause (Sun and Earth only for now)
+# version: 1.4 - Live Simulation with Play/Pause and Zoom(Sun and Earth only for now)
 # author: kuranez
 
 # Importing system libraries
@@ -30,7 +30,7 @@ import constants
 from simulation.solarsystem_sim import Planet, Sun
 from modules.sun_and_earth import create_sun_and_earth
 from modules.screen import pygame_surface_to_PNGbuf, draw_frame 
-from modules.ui_handlers import advance_simulation, on_step, periodic_update, play_pause
+from modules.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -54,14 +54,12 @@ current_solarsystem = create_sun_and_earth()
 # State variables for app
 # ---------------------------------------------
 # Screen variables for centering and scaling
-scale = constants.DEFAULT_SCALE
-screen_offset_x = width // 2
-screen_offset_y = height // 2
-
-# Play/Pause state of the simulation
-ui_state = {
+state = {
     'is_playing': False,
-    'callback': None
+    'callback': None,
+    'scale': constants.DEFAULT_SCALE,
+    'offset_x': width // 2,
+    'offset_y': height // 2,
 }
 
 # Controls for Panel UI
@@ -69,17 +67,21 @@ ui_state = {
 # Buttons for controling the simulation
 step_button = pn.widgets.Button(name="Next Frame", button_type="primary")
 play_button = pn.widgets.Button(name="Play", button_type="success")
+zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
+zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
 # Initial render of the simulation frame
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
 
 # Attach event handlers to buttons
-step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, scale, screen_offset_x, screen_offset_y, constants.COLOR_BACKGROUND, img_pane))
-play_button.on_click(lambda event: play_pause(event, ui_state, screen, current_solarsystem, scale, screen_offset_x, screen_offset_y, constants.COLOR_BACKGROUND, img_pane, play_button))
+step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state['scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane))
+play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, state['scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane, play_button))
+zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, img_pane))
+zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, img_pane))
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row (play_button, step_button, align="center")
+controls = pn.Row (play_button, step_button, zoom_in_button, zoom_out_button, align="center")
 app = pn.Column(controls, img_pane, align="center")
 
 # Use HSpacer to center the content

@@ -1,5 +1,5 @@
 # hud.py - Handles rendering of informational text overlays (HUD)
-# v.1.1 - Refactored from non-web version of the app
+# v.1.2 - Refactored from non-web version of the app
 
 # Importing necessary libraries
 import pygame # For rendering text on the screen

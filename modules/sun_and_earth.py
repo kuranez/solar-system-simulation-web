@@ -1,6 +1,6 @@
 # sun_and_earth.py
 # Module to create Sun and Earth system
-# v.1.0 - Initial creation
+# v.1.1 - Adjusted for scaled sizes based on current scale, refactored to use constants for Earth data
 # author: kuranez
 
 from simulation import constants
@@ -26,6 +26,7 @@ def create_sun_and_earth():
             earth_radius, # scaled radius
             earth_data["mass"],
             earth_data["name"],
+            earth_data["is_inner"],
             color=constants.COLOR_EARTH
         )
         earth.y_vel = earth_data["velocity"]
