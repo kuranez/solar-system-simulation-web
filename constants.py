@@ -1,6 +1,6 @@
 # constants.py 
 # Contains all constants used across the solar system simulation app, including display settings, physical constants, and planetary data.
-# v.1.1 - Adjusted display and scaling Constants 
+# v.1.2 - Adjusted display style and scaling Constants 
 
 import pygame
 import math
@@ -11,9 +11,9 @@ pygame.font.init()
 
 # Display Variables
 WIDTH, HEIGHT = 1920, 1080
-COLOR_TEXT = (255, 255, 255)
-COLOR_BACKGROUND = (38, 38, 38)
+COLOR_TEXT = (255, 255, 255) # Pure white for text
 COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
+COLOR_BACKGROUND = (43, 48, 54) # Dark background for better contrast
 FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General

@@ -4,15 +4,13 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.6a - Live Simulation with Play/Pause and Zoom
+# version: 1.7 - Live Simulation with Play/Pause and Zoom
 # author: kuranez
 
 # Importing system libraries
 import io # For in-memory byte streams
 import sys # For modifying the Python path to include the simulation package
-import os
-
-from modules.solar_system import create_solar_system # For handling file paths
+import os # For handling file paths and directories
 
 # Add directories to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
@@ -88,8 +86,8 @@ zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
 
 # Attach event handlers to buttons
-step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane))
-play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND, img_pane, play_button))
+step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state, constants.COLOR_BACKGROUND, img_pane))
+play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
 zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 
