@@ -18,6 +18,8 @@ def pygame_surface_to_PNGbuf(surface):
     buf.seek(0)
     return buf
 
+from .hud import render_hud
+
 # Function to draw the current frame of the simulation
 def draw_frame(screen, bodies, scale, screen_offset_x, screen_offset_y, color_bg):
     # Clear screen
@@ -25,3 +27,5 @@ def draw_frame(screen, bodies, scale, screen_offset_x, screen_offset_y, color_bg
     # Draw all objects
     for body in bodies:
         body.draw(screen, scale, screen_offset_x, screen_offset_y)
+    # Render the HUD
+    render_hud(screen, bodies)

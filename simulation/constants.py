@@ -1,9 +1,17 @@
 # constants.py 
 
+import pygame
+
+# Initialize Pygame and Font
+pygame.init()
+pygame.font.init()
+
 # Display Variables
 WIDTH, HEIGHT = 1920, 1080
 COLOR_TEXT = (255, 255, 255)
-COLOR_BACKGROUND = (43, 48, 54)
+COLOR_BACKGROUND = (38, 38, 38)
+COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
+FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General
 AU = 149.6e9  # Astronomical Unit in meters

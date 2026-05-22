@@ -4,7 +4,7 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.3 - Live Simulation with Play/Pause (Sun and Earth only for now)
+# version: 1.4 - Live Simulation with Play/Pause (Sun and Earth only for now)
 # author: kuranez
 
 # Importing system libraries

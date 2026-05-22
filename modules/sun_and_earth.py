@@ -31,3 +31,4 @@ def create_sun_and_earth():
         earth.y_vel = earth_data["velocity"]
         return [sun, earth]
     return [sun] # Return only sun if Earth data is not found
+

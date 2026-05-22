@@ -36,6 +36,13 @@ class Body:
         self.draw_line = True
 
 
+    def update_distance_to_sun(self, sun):
+        """Calculates and updates the distance of a body to the sun."""
+        if not self.sun:
+            distance_x = sun.x - self.x
+            distance_y = sun.y - self.y
+            self.distance_to_sun = math.sqrt(distance_x**2 + distance_y**2)
+
     def attraction(self, other):
         """Calculate the forces in x and y direction"""        
         # Coordinates
@@ -46,8 +53,6 @@ class Body:
         # Total Distance
         distance = math.sqrt(distance_x**2 + distance_y**2)
         
-        if other.sun:
-            self.distance_to_sun = distance
         # Force
         force = self.G * self.mass * other.mass / distance**2
         # Angle
@@ -62,6 +67,16 @@ class Body:
         """Update Positions of objects"""
         # Total forces, conservation of mass
         total_fx = total_fy = 0
+
+        # Find the sun and update distance to it
+        sun = None
+        for body in current_solarsystem:
+            if body.is_sun:
+                sun = body
+                break
+        
+        if sun:
+            self.update_distance_to_sun(sun)
 
         # Calculate gravitational forces from other bodies
         for body in current_solarsystem:
@@ -122,7 +137,7 @@ class Sun(Body):
 
     def __init__(self, x, y, radius, mass):
         super().__init__(x, y, radius, mass)
-        self.sun = True
+        self.is_sun = True
         self.name = "Sun"
         self.color = constants.COLOR_SUN
         self.orbit_count = 0  # Sun doesn't orbit but needs the attribute
@@ -289,7 +304,7 @@ class Asteroid(Body):
         self.name = "Asteroid"
         self.color = color  # Set asteroid color
         self.draw_line = False # Asteroids don't need orbit trails
-    
+
     def draw(self, DISPLAYSURF, scale, screen_offset_x=0, screen_offset_y=0):
         """Optimized draw for asteroids"""
         x = self.x * scale + screen_offset_x
