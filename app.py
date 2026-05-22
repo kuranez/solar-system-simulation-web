@@ -24,8 +24,10 @@ import pygame # For off-screen rendering of the solar system simulation
 
 # Importing from the simulation package
 import constants
-from solarsystem_sim import Planet, Sun
+from simulation.solarsystem_sim import Planet, Sun
 from modules.sun_and_earth import create_sun_and_earth
+from modules.screen import pygame_surface_to_PNGbuf, draw_frame 
+from modules.ui_handlers import advance_simulation, on_step, periodic_update, play_pause
 
 
 # Initialize Panel extension
@@ -47,44 +49,20 @@ screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 current_solarsystem = create_sun_and_earth()
 
 # State variables for app
+# ---------------------------------------------
 # Screen variables for centering and scaling
 scale = constants.DEFAULT_SCALE
 screen_offset_x = width // 2
 screen_offset_y = height // 2
 
 # Play/Pause state of the simulation
-is_playing = False
-periodic_callback = None
-
-
-# Methods for simulation and rendering
-# Function to convert Pygame surface to PNG buffer for Panel display
-def pygame_surface_to_PNGbuf(surface):
-    arr = pygame.surfarray.array3d(surface)
-    arr = np.transpose(arr, (1, 0, 2))  # Pygame (w,h,3) -> (h,w,3)
-    img = Image.fromarray(arr)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf
-
-# Function to advance the simulation by one step 
-# (update positions of all bodies)
-def advance_simulation():
-    # Advance the simulation one step
-    for body in current_solarsystem:
-        body.update_position(current_solarsystem)
-
-# Function to draw the current frame of the simulation
-def draw_frame():
-    # Clear screen
-    screen.fill(constants.COLOR_BACKGROUND)
-    # Draw all objects
-    for body in current_solarsystem:
-        body.draw(screen, scale, screen_offset_x, screen_offset_y)
-    # return pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
+ui_state = {
+    'is_playing': False,
+    'callback': None
+}
 
 # Controls for Panel UI
+# ---------------------------------------------
 # Buttons for controling the simulation
 step_button = pn.widgets.Button(name="Next Frame", button_type="primary")
 play_button = pn.widgets.Button(name="Play", button_type="success")
@@ -92,81 +70,17 @@ play_button = pn.widgets.Button(name="Play", button_type="success")
 # Initial render of the simulation frame
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
 
-# Button click handlers
-def on_step(event):
-    advance_simulation()
-    # Redraw the screen
-    screen.fill(constants.COLOR_BACKGROUND)
-    for body in current_solarsystem:
-        body.draw(screen, scale, screen_offset_x, screen_offset_y)
-    # Update the Panel image pane with the new frame
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+# Attach event handlers to buttons
+step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, scale, screen_offset_x, screen_offset_y, constants.COLOR_BACKGROUND, img_pane))
+play_button.on_click(lambda event: play_pause(event, ui_state, screen, current_solarsystem, scale, screen_offset_x, screen_offset_y, constants.COLOR_BACKGROUND, img_pane, play_button))
 
-# Connect button clicks to their respective functions
-step_button.on_click(on_step)
-
-# Function to handle play/pause button click
-def periodic_update():
-    advance_simulation()
-    # Redraw the screen
-    screen.fill(constants.COLOR_BACKGROUND)
-    for body in current_solarsystem:
-        body.draw(screen, scale, screen_offset_x, screen_offset_y)
-    # Update the Panel image pane with the new frame
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
-
-# Function to toggle play/pause state of the simulation
-def play_pause(event):
-    global is_playing, periodic_callback
-    if not is_playing:
-        is_playing = True
-        play_button.name = "Pause"
-        play_button.button_type = "danger"
-        # 20 FPS (every 50 ms)
-        periodic_callback = pn.state.add_periodic_callback(periodic_update, period=50)
-    else:
-        is_playing = False
-        play_button.name = "Play"
-        play_button.button_type = "success"
-        if periodic_callback:
-            periodic_callback.stop()
-            periodic_callback = None
-
-# Connect play/pause button click to its handler
-step_button.on_click(on_step)
-play_button.on_click(play_pause)
-
-def pygame_to_panel_image(screen_surface):
-    # Convert Pygame surface to RGB array
-    pygame_array = pygame.surfarray.array3d(screen_surface)  # shape: (w, h, 3)
-    pygame_array = np.transpose(pygame_array, (1, 0, 2))     # shape: (h, w, 3)
-    img = Image.fromarray(pygame_array)
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-    return buf
-
-def render_test_screen():
-    screen.fill(constants.COLOR_BACKGROUND)  # Dark gray background
-    return pn.pane.PNG(pygame_to_panel_image(screen), width=width, height=height)
-
-
-# Layout for Panel
-app = pn.Column(
-    img_pane,
-    pn.Row(step_button, play_button),
-    sizing_mode="stretch_width"
-)
-
-# Placeholder for the simulation screen
-panel_layout = pn.Column(
-    # render_test_screen,
-    app,
-    sizing_mode="stretch_both"
-)
+# Layout for Panel UI
+# ---------------------------------------------
+controls = pn.Row (play_button, step_button, align="center")
+app = pn.Column(controls, img_pane, align="center")
 
 # Use HSpacer to center the content
-centered_layout = pn.Row(pn.layout.HSpacer(), panel_layout, pn.layout.HSpacer())
+centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
 
 template = pn.template.VanillaTemplate(
     title="Solar System Simulation Web",
