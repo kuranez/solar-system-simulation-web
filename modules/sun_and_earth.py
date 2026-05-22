@@ -1,6 +1,7 @@
 # sun_and_earth.py
 # Module to create Sun and Earth system
 # v.1.0 - Initial creation
+# author: kuranez
 
 from simulation import constants
 from simulation.solarsystem_sim import Planet, Sun
