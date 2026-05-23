@@ -15,7 +15,7 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 
 ## 💡 Features
 
-- - **Interactive Simulation Controls:** Play, pause, and advance the simulation frame-by-frame.
+- **Interactive Simulation Controls:** Play, pause, and advance the simulation frame-by-frame.
 - **Multiple Simulation Views:** Easily switch between different scenarios, such as the full solar system or a simple Sun-Earth system.
 - **Web App built using Panel:** The entire user interface is built with the powerful and flexible Panel library.
 - **Off-Screen Pygame Rendering:** Utilizes Pygame for high-performance, off-screen rendering of the simulation, served through the Panel web interface.
@@ -24,7 +24,7 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 
 ## ⚙️ Project Architecture
 
-```
+```yaml
 solar-system-simulation-web/
 │
 ├── app.py                  # Main application entry point. Initializes Panel UI, state, and callbacks.
