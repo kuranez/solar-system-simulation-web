@@ -1,12 +1,13 @@
 # Solar System Simulation Web
 
-This branch contains the initial minimal web version of the solar system simulation.
+This branch contains an early skeleton version of the web app with the full solar system and basic zoom controls.
 
 ## What it includes
 
-- Sun and Earth only
+- Full solar system view
 - Play/Pause simulation
 - Step one frame at a time
+- Zoom in and zoom out controls
 - Pygame rendering inside a Panel web UI
 
 ## Run it
@@ -27,4 +28,4 @@ The app opens a local web UI on port `5000`.
 
 ## Notes
 
-This is a backup branch for the early stable version of the project, before later zoom, HUD, and modular UI updates.
+This is still a lightweight release branch, kept as an early stable skeleton before later HUD and modular UI work.
