@@ -5,6 +5,8 @@ WORKDIR /app
 # Install system dependencies if needed
 RUN apt-get update && apt-get install -y \
     build-essential \
+    libsdl2-dev \
+    fontconfig \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements from the main codebase
@@ -15,12 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN groupadd -g 1003 psacln && useradd -u 10000 -g 1003 -m webadmin
 
 # Copy the main app code
-COPY app.py .
-COPY constants.py .
-COPY modules ./modules
-COPY ui ./ui
-COPY simulation ./simulation
-
+COPY . .
+# COPY app.py .
+# COPY constants.py .
+# COPY modules ./modules
+# COPY ui ./ui
+# COPY simulation ./simulation
 
 # Set file permissions
 RUN chown -R webadmin:psacln /app
