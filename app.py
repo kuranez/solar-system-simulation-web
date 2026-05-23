@@ -23,7 +23,7 @@ from PIL import Image # For image processing and conversion between Pygame surfa
 import pygame # For off-screen rendering of the solar system simulation
 
 import panel as pn # For building the web interface
-from panel.template import MaterialTemplate
+from panel.template import FastListTemplate
 from panel.theme import DarkTheme
 
 # Importing from the simulation package
@@ -33,12 +33,14 @@ from modules.simple_solar_system import create_solar_system
 from modules.simple_sun_and_earth import create_sun_and_earth
 
 # Importing UI handlers and CSS
-from modules.ui.css import CUSTOM_SELECT_CSS
+from modules.ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
 from modules.ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, zoom_in, zoom_out
+from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_body_radii, zoom_in, zoom_out
+
 
 # Initialize Panel extension
-pn.extension()
+pn.extension(raw_css=[GLOBAL_THEME_CSS])
+# pn.extension() 
 
 # Pygame initialization (off-screen)
 pygame.display.init()
@@ -79,7 +81,7 @@ state = {
 
 # Selection of predefined views (e.g., Sun & Earth, Full Solar System)
 view_select = pn.widgets.Select(
-    name="Select Simulation", 
+    label="Select Simulation", 
     options=list(SIMULATION_VIEWS.keys()),
     value=initial_view_name, # Set the default value
     width=450,
@@ -87,11 +89,21 @@ view_select = pn.widgets.Select(
 )
 
 # Buttons for controling the simulation
-step_button = pn.widgets.Button(name="Next Frame", button_type="primary")
-play_button = pn.widgets.Button(name="Play", button_type="success")
-zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
-zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
+step_button = pn.widgets.Button(name="Next Frame", button_type="primary", width=150, css_classes=["big-button"])
+play_button = pn.widgets.Button(name="Play", button_type="success", width=150, css_classes=["big-button"])
+# zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
+# zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
+# New slider for zoom control
+zoom_slider = pn.widgets.FloatSlider(
+    label='Zoom', 
+    start=0.05,  # Minimum zoom factor
+    end=2.5,    # Maximum zoom factor
+    step=0.05, 
+    value=0.5,   # Start at 50% zoom
+    format="0.0%",  # Display as percentage
+    stylesheets=[CUSTOM_SLIDER_CSS],
+)
 
 # Initial render of the simulation frame
 img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
@@ -119,25 +131,41 @@ def update_view(event):
 # Attach the callback to the view selector
 view_select.param.watch(update_view, 'value')
 
+def on_zoom_change(event):
+    """Handles changes in the zoom slider."""
+    # The slider's value is a multiplier for the default scale
+    state['distance_scale'] = constants.DEFAULT_SCALE * event.new
+    
+    # Recalculate planet sizes and redraw the frame
+    update_body_radii(current_solarsystem, state['distance_scale'])
+    
+    # Redraw the scene with the new scale
+    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND)
+    img_pane.object = pygame_surface_to_PNGbuf(screen)
+
+# Attach the callback to the slider
+zoom_slider.param.watch(on_zoom_change, 'value')
+
 # Attach event handlers to buttons
 step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state, constants.COLOR_BACKGROUND, img_pane))
 play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
-zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
-zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
+# zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
+# zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row (play_button, step_button, zoom_in_button, zoom_out_button, view_select, align="center")
+controls = pn.Row (play_button, step_button, zoom_slider, view_select, align="center")
 app = pn.Column(controls, img_pane, align="center")
 
 # Use HSpacer to center the content
 centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
 
-template = MaterialTemplate(
+template = FastListTemplate(
     title= "Solar System Simulation",
     theme=DarkTheme,
     header_background="#422C71",
     sidebar_width=0,
+    theme_toggle=False,
     # favicon="path/to/your/icon.png"  # Replace with the actual path to your icon
 )
 template.main.append(centered_layout)

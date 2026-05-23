@@ -15,14 +15,14 @@ def advance_simulation(bodies):
     for body in bodies:
         body.update_position(bodies)
 
-def update_body_radii(bodies, distance_scale):
+def update_body_radii(current_solarsystem, distance_scale):
     """Updates the radius of each body based on the current distance scale."""
 
     scaled_sizes = calculate_scaled_sizes(
         distance_scale
     )
 
-    for body in bodies:
+    for body in current_solarsystem:
 
         if (
             hasattr(body, "name")
@@ -66,7 +66,7 @@ def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
             state['callback'].stop()
             state['callback'] = None
 
-def zoom_in(event, state, bodies, screen, color_bg, img_pane):
+def zoom_in(event, state, current_solarsystem, screen, color_bg, img_pane):
     """Handles the 'Zoom In' button click with full redraw logic."""
     # Increase scale
     state['distance_scale'] *= 1.1
@@ -74,11 +74,11 @@ def zoom_in(event, state, bodies, screen, color_bg, img_pane):
     state['distance_scale'] = min(state['distance_scale'], constants.DEFAULT_SCALE * 10)
     
     # Recalculate planet sizes and redraw the frame
-    update_body_radii(bodies, state['distance_scale'])
-    draw_frame(screen, bodies, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    update_body_radii(current_solarsystem, state['distance_scale'])
+    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
-def zoom_out(event, state, bodies, screen, color_bg, img_pane):
+def zoom_out(event, state, current_solarsystem, screen, color_bg, img_pane):
     """Handles the 'Zoom Out' button click with full redraw logic."""
     # Decrease scale
     state['distance_scale'] /= 1.1
@@ -86,6 +86,6 @@ def zoom_out(event, state, bodies, screen, color_bg, img_pane):
     state['distance_scale'] = max(state['distance_scale'], constants.DEFAULT_SCALE * 0.05)
 
     # Recalculate planet sizes and redraw the frame
-    update_body_radii(bodies, state['distance_scale'])
-    draw_frame(screen, bodies, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    update_body_radii(current_solarsystem, state['distance_scale'])
+    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
