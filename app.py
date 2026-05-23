@@ -48,17 +48,17 @@ screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 
 # Simulation setup
 SIMULATION_VIEWS = {
-    "Sun and Earth System": {
-        "title": "Sun and Earth System",
+    "Simple Sun and Earth System": {
+        "title": "Simple Sun and Earth System (No moon)",
         "generator": create_sun_and_earth
     },
-    "Full Solar System": {
-        "title": "Full Solar System",
+    "Simple Solar System": {
+        "title": "Simple Solar System (Planets only, no asteroids)",
         "generator": create_solar_system
     }
 }
 
-initial_view_name = "Full Solar System"
+initial_view_name = "Simple Solar System"
 current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
 
 
@@ -82,7 +82,7 @@ view_select = pn.widgets.Select(
     name="Select Simulation", 
     options=list(SIMULATION_VIEWS.keys()),
     value=initial_view_name, # Set the default value
-    width=350,
+    width=450,
     stylesheets=[CUSTOM_SELECT_CSS]
 )
 
