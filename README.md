@@ -20,7 +20,7 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 
 ## 🌐 WebApp
 
-> [![Live Demo](https://img.shields.io/badge/🟢%20Live%20App-Solar%20System%20Sim-422C71?style=for-the-badge)](https://apps.kuracodez.space/solar-system-sim/main)
+> [![Live Demo](https://img.shields.io/badge/🟢%20Live%20App-Solar%20System%20Sim-422C71?style=for-the-badge)](https://apps.kuracodez.space/solar-system-sim/app)
 >
 > **Try the app - explore the solar system directly in your browser.**
 >
