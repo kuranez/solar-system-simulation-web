@@ -25,7 +25,7 @@ import pygame # For off-screen rendering of the solar system simulation
 # Importing from the simulation package
 import constants
 from solarsystem_sim import Planet, Sun
-from modules.sun_and_earth import create_sun_and_earth
+from modules.simple_sun_and_earth import create_sun_and_earth
 
 
 # Initialize Panel extension

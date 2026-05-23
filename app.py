@@ -29,8 +29,8 @@ from panel.theme import DarkTheme
 # Importing from the simulation package
 import constants # For simulation constants like scale and colors
 from simulation.solarsystem_sim import Planet, Sun
-from modules.solar_system import create_solar_system
-from modules.sun_and_earth import create_sun_and_earth
+from modules.simple_solar_system import create_solar_system
+from modules.simple_sun_and_earth import create_sun_and_earth
 
 # Importing UI handlers and CSS
 from modules.ui.css import CUSTOM_SELECT_CSS
