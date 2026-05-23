@@ -100,7 +100,7 @@ app = pn.Column(controls, img_pane, align="center")
 centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
 
 template = MaterialTemplate(
-    site="Earth and Sun",
+    # site="Earth and Sun",
     title="Solar System Simulation",
     theme=DarkTheme,
     header_background="#422C71",
