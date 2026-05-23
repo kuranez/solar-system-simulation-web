@@ -1,4 +1,18 @@
 # Solar System Simulation Web
+<p align="left">
+    <a href="https://www.python.org/" target="_blank">
+        <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+    </a>
+    <a href="https://www.pygame.org" target="_blank">
+        <img src="https://img.shields.io/badge/Pygame-62B66B?style=for-the-badge&logo=pygame&logoColor=white" alt="Pygame"/>"
+    </a>
+    <a href="https://panel.holoviz.org/" target="_blank">
+        <img src="https://img.shields.io/badge/Holoviz%20Panel-0094A9?style=for-the-badge" alt="Holoviz Panel"/>
+    </a>
+    <a href="https://docs.docker.com/" target="_blank">
+        <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+    </a>
+</p>
 
 Web implementation of my previous [Solar System Simulation](https://github.com/kuranez/solar-system-simulation) with simplified functionality for web rendering.
 
