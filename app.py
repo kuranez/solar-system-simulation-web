@@ -4,9 +4,8 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.9 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
-# Update Log: Added time display in years and days, improved zoom control with a slider, and enhanced the HUD with better formatting.
-# author: kuranez
+# version: 2.0 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
+# Update Log: Tweaked architecture for better modularity
 
 # Importing system libraries
 import io # For in-memory byte streams
@@ -16,6 +15,7 @@ import os # For handling file paths and directories
 # Add directories to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'ui')))
 
 # Importing necessary libraries
 import numpy as np # For numerical operations and array handling
@@ -33,9 +33,9 @@ from modules.simple_solar_system import create_solar_system
 from modules.simple_sun_and_earth import create_sun_and_earth
 
 # Importing UI handlers and CSS
-from modules.ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
-from modules.ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from modules.ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_body_radii, zoom_in, zoom_out
+from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
+from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
+from ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
