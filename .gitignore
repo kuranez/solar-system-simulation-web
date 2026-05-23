@@ -1,0 +1,9 @@
+
+.vscode
+__pycache__
+app_backup.py
+RELEASE_NOTES_v1.4.md
+solar-system-simulation-web-v.1.4.zip
+modules/__pycache__
+modules/ui/__pycache__
+simulation/__pycache__
