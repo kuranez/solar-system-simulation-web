@@ -4,7 +4,7 @@
         <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
     </a>
     <a href="https://www.pygame.org" target="_blank">
-        <img src="https://img.shields.io/badge/Pygame-62B66B?style=for-the-badge&logo=pygame&logoColor=white" alt="Pygame"/>"
+        <img src="https://img.shields.io/badge/Pygame-62B66B?style=for-the-badge&logo=pygame&logoColor=white" alt="Pygame"/>
     </a>
     <a href="https://panel.holoviz.org/" target="_blank">
         <img src="https://img.shields.io/badge/Holoviz%20Panel-0094A9?style=for-the-badge" alt="Holoviz Panel"/>
