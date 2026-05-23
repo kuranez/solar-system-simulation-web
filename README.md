@@ -24,6 +24,7 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 
 ## ⚙️ Project Architecture
 
+```
 solar-system-simulation-web/
 │
 ├── app.py                  # Main application entry point. Initializes Panel UI, state, and callbacks.
@@ -43,6 +44,7 @@ solar-system-simulation-web/
 └── simulation/
     ├── solarsystem_sim.py  # Core classes for celestial bodies (Body, Planet, Sun) and their physics.
     └── solarsystem_scale.py # Logic for calculating the dynamic scaling of planet sizes.
+```
 
 ---
 
