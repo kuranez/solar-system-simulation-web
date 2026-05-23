@@ -57,6 +57,12 @@ solar-system-simulation-web/
 
 ---
 
+## 📕 Resources
+
+[Planetary Data from NASA](https://nssdc.gsfc.nasa.gov/planetary/factsheet/)
+
+---
+
 ## 📗 Contributing
 
 Pull requests, bug reports, and feature requests are welcome!
