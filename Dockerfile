@@ -8,18 +8,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements from the main codebase
-COPY web/requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Create user and group for security
 RUN groupadd -g 1003 psacln && useradd -u 10000 -g 1003 -m webadmin
 
 # Copy the main app code
-COPY web/app.py .
-COPY web/constants.py .
-COPY web/modules ./modules
-COPY web/ui ./ui
-COPY web/simulation ./simulation
+COPY app.py .
+COPY constants.py .
+COPY modules ./modules
+COPY ui ./ui
+COPY simulation ./simulation
 
 
 # Set file permissions
