@@ -1,8 +1,10 @@
-# css.py
-# Module to define custom CSS styles for the solar system simulation web app
-# v.1.3 - Adjusted CSS syntax and structure for FastListTemplate compatibility
-# author: kuranez
+""" ui/css.py
 
+    # Contains global CSS styles for the Panel app, 
+    # including color palette, typography, and 
+    # custom component styles
+
+"""
 
 GLOBAL_THEME_CSS = """
 :root {

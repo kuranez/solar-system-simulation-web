@@ -1,6 +1,9 @@
-# constants.py 
-# Contains all constants used across the solar system simulation app, including display settings, physical constants, and planetary data.
-# v.1.3 - Tweaked comments and structure for better readability
+""" constants.py 
+
+# Contains all constants used across the solar system simulation app, 
+# including display settings, physical constants, and planetary data.
+
+"""
 
 # Importing necessary libraries and modules
 import pygame # For rendering the simulation
@@ -43,144 +46,169 @@ COLOR_URANUS = (209, 231, 231)
 COLOR_NEPTUNE = (63, 84, 186)
 
 # Sun Data
-sun_radius = 1392700e3 / 2
-sun_mass = 1.98892e30
-
-# Planetary Data
-# https://nssdc.gsfc.nasa.gov/planetary/factsheet/
-
-# Perihelion in meters
-mercury_perihelion = 46.0e9
-venus_perihelion = 107.5e9
-earth_perihelion = 147.1e9
-mars_perihelion = 206.7e9
-jupiter_perihelion = 740.6e9
-saturn_perihelion = 1357.6e9
-uranus_perihelion = 2732.7e9
-neptune_perihelion = 4471.1e9
-
-
-# Radius in meters
-mercury_radius = 4879e3 / 2
-venus_radius = 12104e3 / 2
-earth_radius = 12756e3 / 2
-mars_radius = 6792e3 / 2
-jupiter_radius = 142984e3 / 2
-saturn_radius = 120536e3 / 2
-uranus_radius = 51118e3 / 2
-neptune_radius = 49528e3 / 2
-
-# Mass in kilograms
-mercury_mass = 0.33e24
-venus_mass = 4.87e24
-earth_mass = 5.97e24
-mars_mass = 0.642e24
-jupiter_mass = 1898e24
-saturn_mass = 568e24
-uranus_mass = 86.8e24
-neptune_mass = 102e24
-
-# Orbital velocity in meters per second
-mercury_velocity = 47.40e3
-venus_velocity = 35.02e3
-earth_velocity = 29.78e3
-mars_velocity = 24.06e3
-jupiter_velocity = 13.06e3
-saturn_velocity = 9.68e3
-uranus_velocity = 6.80e3
-neptune_velocity = 5.43e3
-
-# Planets Data Structure
-PLANETS_DATA = [
-    {
-        "name": "Mercury",
-        "position": -0.387,  # AU from Sun
-        "perihelion": 46.0e9,  # meters
-        "radius": 4879e3 / 2,  # meters
-        "mass": 0.33e24,  # kg
-        "velocity": 47.40e3,  # m/s
-        "is_inner": True
+# Compact bodies data structure
+BODIES_DATA = {
+    "Sun": {
+        "name": "Sun",
+        "type": "star",
+        "position": 0.0, # Sun is at the center
+        "radius": 1392700e3 / 2,
+        "mass": 1.98892e30,
+        "color": COLOR_SUN,
     },
-    {
+    "Mercury": {
+        "name": "Mercury",
+        "type": "planet",
+        "position": 0.387, # Average distance from the Sun in AU (negative for left side)
+        "perihelion": 46.0e9,
+        "radius": 4879e3 / 2,
+        "mass": 0.33e24,
+        "orbital_velocity": 47.40e3,
+        "is_inner": True,
+        "color": COLOR_MERCURY,
+    },
+    "Venus": {
         "name": "Venus",
-        "position": -0.723,
+        "type": "planet",
+        "position": 0.723, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 107.5e9,
         "radius": 12104e3 / 2,
         "mass": 4.87e24,
-        "velocity": 35.02e3,
-        "is_inner": True
+        "orbital_velocity": 35.02e3,
+        "is_inner": True,
+        "color": COLOR_VENUS,
     },
-    {
+    "Earth": {
         "name": "Earth",
-        "position": -1.0,
+        "type": "planet",
+        "position": 1.0, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 147.1e9,
         "radius": 12756e3 / 2,
         "mass": 5.97e24,
-        "velocity": 29.78e3,
-        "is_inner": True
+        "orbital_velocity": 29.78e3,
+        "is_inner": True,
+        "color": COLOR_EARTH,
     },
-    {
+    "Mars": {
         "name": "Mars",
-        "position": -1.524,
+        "type": "planet",
+        "position": 1.524, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 206.7e9,
         "radius": 6792e3 / 2,
         "mass": 0.642e24,
-        "velocity": 24.06e3,
-        "is_inner": True
+        "orbital_velocity": 24.06e3,
+        "is_inner": True,
+        "color": COLOR_MARS,
     },
-    {
+    "Jupiter": {
         "name": "Jupiter",
-        "position": -5.204,
+        "type": "planet",
+        "position": 5.204, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 740.6e9,
         "radius": 142984e3 / 2,
         "mass": 1898e24,
-        "velocity": 13.06e3,
-        "is_inner": False
+        "orbital_velocity": 13.06e3,
+        "is_inner": False,
+        "color": COLOR_JUPITER,
     },
-    {
+    "Saturn": {
         "name": "Saturn",
-        "position": -9.573,
+        "type": "planet",
+        "position": 9.573, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 1357.6e9,
         "radius": 120536e3 / 2,
         "mass": 568e24,
-        "velocity": 9.68e3,
-        "is_inner": False
+        "orbital_velocity": 9.68e3,
+        "is_inner": False,
+        "color": COLOR_SATURN,
     },
-    {
+    "Uranus": {
         "name": "Uranus",
-        "position": -19.165,
+        "type": "planet",
+        "position": 19.165, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 2732.7e9,
         "radius": 51118e3 / 2,
         "mass": 86.8e24,
-        "velocity": 6.80e3,
-        "is_inner": False
+        "orbital_velocity": 6.80e3,
+        "is_inner": False,
+        "color": COLOR_URANUS,
     },
-    {
+    "Neptune": {
         "name": "Neptune",
-        "position": -30.178,
+        "type": "planet",
+        "position": 30.178, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 4471.1e9,
         "radius": 49528e3 / 2,
         "mass": 102e24,
-        "velocity": 5.43e3,
-        "is_inner": False
-    }
-]
-
-# Major Asteroids
-ASTEROID_CERES = {
-    "name": "Ceres",
-    "radius": 473e3,  # meters
-    "mass": 9.393e20,  # kg
-    "semi_major_axis": 2.77 * AU,
-    "orbital_velocity": 17900,  # m/s
-    "color": (180, 180, 180)
+        "orbital_velocity": 5.43e3,
+        "is_inner": False,
+        "color": COLOR_NEPTUNE,
+    },
+    # Asteroids
+    "Ceres": {
+        "name": "Ceres",
+        "type": "asteroid",
+        "position": None, # Ceres has a more complex orbit, so we can set this to None or calculate it dynamically
+        "perihelion": 413.7e9,
+        "aphelion": 469.8e9,
+        "radius": 473e3,
+        "mass": 9.393e20,
+        "semi_major_axis": 2.77 * AU,
+        "orbital_velocity": 17900,
+        "color": (180, 180, 180),
+    },
+    "Vesta": {
+        "name": "Vesta",
+        "type": "asteroid",
+        "position": None, # Vesta has a more complex orbit, so we can set this to None or calculate it dynamically
+        "perihelion": 355.0e9,
+        "aphelion": 420.0e9,
+        "radius": 262.7e3,
+        "mass": 2.59e20,
+        "semi_major_axis": 2.36 * AU,
+        "orbital_velocity": 19300,
+        "color": (190, 185, 180),
+    },
+    # Moon (kept as a full spec/template)
+    "Moon": {
+        "name": "Moon",
+        "type": "moon",
+        "position": None, # Moon's position is relative to Earth, so we can set this to None or calculate it dynamically
+        "parent_body": "Earth",
+        "perigee": 363300e3,
+        "apogee": 405500e3,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 1737.1e3,
+        "mass": 7.342e22,
+        "semi_major_axis": 384400e3,
+        "average_distance": 384400e3,
+        "orbital_velocity": 1022,
+        "color": (200, 200, 200),
+    },
 }
 
-ASTEROID_VESTA = {
-    "name": "Vesta",
-    "radius": 262.7e3,
-    "mass": 2.59e20,
-    "semi_major_axis": 2.36 * AU,
-    "orbital_velocity": 19300,
-    "color": (190, 185, 180)
-}
+# Convenience single-value aliases for backwards compatibility
+sun_radius = BODIES_DATA["Sun"]["radius"]
+sun_mass = BODIES_DATA["Sun"]["mass"]
+
+# Rebuild PLANETS_DATA in the previous shape expected by the simulation
+PLANETS_DATA = []
+for _name, entry in BODIES_DATA.items():
+    if entry.get("type") == "planet":
+        PLANETS_DATA.append({
+            "name": entry.get("name"),
+            "position": entry.get("position"),
+            "perihelion": entry.get("perihelion"),
+            "radius": entry.get("radius"),
+            "mass": entry.get("mass"),
+            "velocity": entry.get("orbital_velocity"),
+            "is_inner": entry.get("is_inner", False),
+        })
+
+# Asteroid compatibility variables
+ASTEROID_CERES = BODIES_DATA["Ceres"]
+ASTEROID_VESTA = BODIES_DATA["Vesta"]
+
+# MOON_DATA kept for compatibility
+MOON_DATA = BODIES_DATA["Moon"]

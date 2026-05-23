@@ -1,7 +1,9 @@
-# solarsystem_scale.py
-# Module to handle scaling of planet sizes based on current zoom level in the solar system simulation
-# v.1.2 - Tweaked comments and structure for better readability
-# author: kuranez
+""" simulation/solarsystem_scale.py
+
+    # Module to handle scaling of planet sizes based on 
+    # current zoom level in the solar system simulation
+
+"""
 
 # Importing necessary libraries and modules
 import constants

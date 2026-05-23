@@ -1,21 +1,16 @@
-# solar_system.py
-# Main module for the solar system simulation web app
-# v.1.1 - Tweaked comments and structure for better readability
-# author: kuranez
+""" Full solar system with all planets (no asteroids) """
 
 # Importing necessary libraries and modules
 import constants # For simulation constants like scale and colors
-from simulation.solarsystem_sim import Planet, Sun # For defining celestial bodies
+from objects import Planet, create_sun
 from simulation.solarsystem_scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
 
 # Function to create the solar system with the Sun, planets
 def create_solar_system():
     """Creates the solar system with the Sun, planets"""
-    # Calculate scaled sizes for all planets based on current scale
+    sun = create_sun()
+
     scaled_sizes = calculate_scaled_sizes(constants.DEFAULT_SCALE)
-    
-    # Create Sun at the center
-    sun = Sun(0, 0, 1, constants.sun_mass)
     
     # Create planets based on constants data
     planets = []

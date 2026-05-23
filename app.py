@@ -1,11 +1,13 @@
-# Solar System Simulation Web - Panel UI with Pygame Rendering
+"""Solar System Simulation Web - Panel UI with Pygame Rendering
 
 # This is a Panel-based web application that simulates the solar system.
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 2.0 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
+# version: 2.1 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
 # Update Log: Tweaked architecture for better modularity
+
+"""
 
 # Importing system libraries
 import io # For in-memory byte streams
@@ -28,14 +30,16 @@ from panel.theme import DarkTheme
 
 # Importing from the simulation package
 import constants # For simulation constants like scale and colors
-from simulation.solarsystem_sim import Planet, Sun
 from modules.simple_solar_system import create_solar_system
-from modules.simple_sun_and_earth import create_sun_and_earth
+from modules.simple_sun_and_earth import create_sun_and_earth_system
+from modules.simple_earth_moon import create_earth_moon_system
+from modules.simple_sun_earth_moon import create_sun_earth_moon_system
+
 
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
 from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -50,17 +54,39 @@ screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 
 # Simulation setup
 SIMULATION_VIEWS = {
-    "Simple Sun and Earth System": {
-        "title": "Simple Sun and Earth System (No moon)",
-        "generator": create_sun_and_earth
+    "[Simple] Sun and Earth": {
+        "title": "Simple Sun and Earth System",
+        "description": "A simulation of the Sun and Earth system.",
+        "generator": create_sun_and_earth_system,
+        "base_scale": 1.0,
     },
-    "Simple Solar System": {
+    "[Simple] Earth and Moon": {
+        "title": "Simple Earth and Moon System",
+        "description": "A simulation of the Earth and Moon system.",
+        "generator": create_earth_moon_system,
+        "base_scale": 1.0,
+    },
+    "[Simple] Sun, Earth, and Moon System": {
+        "title": "Sun, Earth, and Moon System",
+        "description": "A simulation of the Sun, Earth, and Moon system.",
+        "generator": create_sun_earth_moon_system,
+        "base_scale": 1.0,
+        "zoom_updater": update_proportional_sun_earth_moon, # Custom updater for proportional scaling of the Sun-Earth-Moon system
+        "scale_mode": "proportional", # This view will use proportional scaling for both distance and size based on the slider
+        "sun_earth_base_px": 350, # Base pixel distance for Sun-Earth at default scale
+        "earth_moon_ratio": 0.257, # Ratio of Earth-Moon
+    },
+    "[Simple] Solar System": {
         "title": "Simple Solar System (Planets only, no asteroids)",
-        "generator": create_solar_system
+        "description": "A simulation of the simple solar system with planets only.",
+        "generator": create_solar_system,
+        "base_scale": constants.DEFAULT_SCALE, 
+        "scale_mode": "distance", # This view will use distance scaling for the zoom slider 
+        "zoom_updater": None, # No custom updater, will use the default distance scaling logic in on_zoom_change
     }
 }
 
-initial_view_name = "Simple Solar System"
+initial_view_name = "[Simple] Solar System"
 current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
 
 
@@ -70,7 +96,8 @@ current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
 state = {
     'is_playing': False,
     'callback': None,
-    'distance_scale': constants.DEFAULT_SCALE, # orbital distance scaling
+    'base_distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'],
+    'distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'], # orbital distance scaling
     'planet_scale': 1.0, # planet size scaling (can be adjusted separately if needed)
     'offset_x': width // 2,
     'offset_y': height // 2,
@@ -97,17 +124,19 @@ play_button = pn.widgets.Button(name="Play", button_type="success", width=150, c
 
 # New slider for zoom control
 zoom_slider = pn.widgets.FloatSlider(
-    label='Zoom', 
-    start=0.05,  # Minimum zoom factor
-    end=2.5,    # Maximum zoom factor
+    label='Zoom & Scale', 
+    start=0.05,  # Minimum zoom factor (5%)
+    end=2.5,    # Maximum zoom factor (250%)
     step=0.05, 
-    value=0.5,   # Start at 50% zoom
+    value=1.0,   # Start at base view scale
     format="0.0%",  # Display as percentage
     stylesheets=[CUSTOM_SLIDER_CSS],
 )
 
 # Initial render of the simulation frame
-img_pane = pn.pane.PNG(pygame_surface_to_PNGbuf(screen), width=width, height=height, align="center")
+draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
+img_bytes = pygame_surface_to_PNGbuf(screen)
+img_pane = pn.pane.PNG(img_bytes, width=width, height=height, align="center")
 
 # Callback functions
 def update_view(event):
@@ -124,6 +153,11 @@ def update_view(event):
 
     # Load the new set of celestial bodies
     current_solarsystem = SIMULATION_VIEWS[view_name]["generator"]()
+
+    # Apply per-view base scale so each simulation can define its own distance mapping.
+    state['base_distance_scale'] = SIMULATION_VIEWS[view_name]['base_scale']
+    state['distance_scale'] = state['base_distance_scale'] * zoom_slider.value
+    update_body_radii(current_solarsystem, state['distance_scale'])
     
     # Redraw the scene with the new system
     draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
@@ -133,14 +167,18 @@ def update_view(event):
 view_select.param.watch(update_view, 'value')
 
 def on_zoom_change(event):
-    """Handles changes in the zoom slider."""
-    # The slider's value is a multiplier for the default scale
-    state['distance_scale'] = constants.DEFAULT_SCALE * event.new
-    
-    # Recalculate planet sizes and redraw the frame
-    update_body_radii(current_solarsystem, state['distance_scale'])
-    
-    # Redraw the scene with the new scale
+    view_cfg = SIMULATION_VIEWS[view_select.value]
+    mode = view_cfg.get("scale_mode", "distance")
+    scale = event.new
+
+    updater = view_cfg.get("zoom_updater")
+
+    if updater is not None:
+        updater(current_solarsystem, state, scale, view_cfg)
+    elif mode == "distance":
+        state["distance_scale"] = state["base_distance_scale"] * scale
+        update_body_radii(current_solarsystem, state["distance_scale"])
+
     draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
@@ -169,7 +207,8 @@ template = FastListTemplate(
     theme_toggle=False,
     # favicon="path/to/your/icon.png"  # Replace with the actual path to your icon
 )
-template.main.append(centered_layout)
+if template.main is not None:
+    template.main.append(centered_layout)
 
 
 if __name__ == "__main__":

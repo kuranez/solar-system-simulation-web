@@ -1,0 +1,1 @@
+"""Preset factories for common celestial bodies."""

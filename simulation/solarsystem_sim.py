@@ -1,8 +1,9 @@
-# solarsystem_sim.py
-# Main module for the solar system simulation logic
-# Contains classes for celestial bodies (Sun, Planet, Asteroid) and their physics
-# v.1.2 - Tweaked comments and structure for better readability,
-# author: kuranez
+""" simulation/solarsystem_sim.py
+    
+    # Main module for the solar system simulation logic
+    # Contains classes for celestial bodies (Sun, Planet, Asteroid) and their physics
+
+"""
 
 # Importing necessary libraries and modules
 import constants # For simulation constants like scale and colors
@@ -10,6 +11,12 @@ import pygame # For rendering the simulation
 import math # For mathematical calculations
 import itertools # For cycling through colors for planets
 
+from objects.moon import Moon
+
+# Helper: circular orbital speed (m/s) for a small body orbiting a central mass
+def circular_orbital_speed(central_mass, radius):
+    """Return circular orbital speed (m/s) around a central_mass at given radius (m)."""
+    return math.sqrt(constants.G * central_mass / radius)
 
 # Solar system bodies
 class Body:

@@ -1,6 +1,9 @@
-# screen.py
-# Handles off-screen rendering of the solar system simulation using Pygame and conversion to PNG for Panel display
-# v.1.5 - Added total elapsed simulation time tracking and display in the HUD, improved formatting of scale information
+""" ui/screen.py
+
+    # Handles off-screen rendering of the solar system simulation 
+    # using Pygame and conversion to PNG for Panel display
+
+"""
 
 # Importing necessary libraries
 import io
@@ -40,9 +43,9 @@ def pygame_surface_to_PNGbuf(surface):
     arr = pygame.surfarray.array3d(surface)
     arr = np.transpose(arr, (1, 0, 2))  # Pygame (w,h,3) -> (h,w,3)
     img = Image.fromarray(arr)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
