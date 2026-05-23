@@ -4,8 +4,8 @@
 # It uses Pygame for off-screen rendering and Panel for the web interface. The simulation includes
 # the Sun, planets, and an asteroid belt. Users can play the simulation live or advance it frame by frame.
 
-# version: 1.8 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
-# Update Log: Tweaked CSS for better appearance, added multiple views
+# version: 1.9 - Live Simulation with Play/Pause and Zoom, Multiple Views (Sun & Earth, Full Solar System)
+# Update Log: Added time display in years and days, improved zoom control with a slider, and enhanced the HUD with better formatting.
 # author: kuranez
 
 # Importing system libraries
@@ -74,6 +74,7 @@ state = {
     'planet_scale': 1.0, # planet size scaling (can be adjusted separately if needed)
     'offset_x': width // 2,
     'offset_y': height // 2,
+    'total_elapsed_time': 0.0, # Total elapsed simulation time in seconds
 }
 
 # Controls for Panel UI
@@ -125,7 +126,7 @@ def update_view(event):
     current_solarsystem = SIMULATION_VIEWS[view_name]["generator"]()
     
     # Redraw the scene with the new system
-    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND)
+    draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
 # Attach the callback to the view selector
@@ -140,7 +141,7 @@ def on_zoom_change(event):
     update_body_radii(current_solarsystem, state['distance_scale'])
     
     # Redraw the scene with the new scale
-    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], constants.COLOR_BACKGROUND)
+    draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
 # Attach the callback to the slider

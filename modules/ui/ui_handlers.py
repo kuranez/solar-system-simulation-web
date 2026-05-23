@@ -1,6 +1,6 @@
 # ui_handlers.py
 # Module to handle user interface interactions for the solar system simulation
-# v.1.7 - Adjusted scaling logic for planet sizes based on current zoom level
+# v.1.8 - Improved zoom control with a slider, added multiple views (Sun & Earth, Full Solar System), and enhanced the HUD with better formatting
 # author: kuranez
 
 # Importing necessary libraries
@@ -10,8 +10,9 @@ from simulation.solarsystem_scale import calculate_scaled_sizes # For updating b
 from .screen import pygame_surface_to_PNGbuf, draw_frame # For rendering the simulation and converting to PNG for Panel display
 
 
-def advance_simulation(bodies):
+def advance_simulation(bodies, state):
     """Advances the simulation by one step for all bodies."""
+    state['total_elapsed_time'] += constants.TIMESTEP
     for body in bodies:
         body.update_position(bodies)
 
@@ -37,14 +38,14 @@ def update_body_radii(current_solarsystem, distance_scale):
 # Event handlers for UI buttons
 def on_step(event, screen, bodies, state, color_bg, img_pane):
     """Handles the 'Next Frame' button click."""
-    advance_simulation(bodies)
-    draw_frame(screen, bodies, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    advance_simulation(bodies, state)
+    draw_frame(screen, bodies, state, color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
 def periodic_update(screen, bodies, state, color_bg, img_pane):
     """Function called periodically when the simulation is playing."""
-    advance_simulation(bodies)
-    draw_frame(screen, bodies, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    advance_simulation(bodies,state)
+    draw_frame(screen, bodies, state, color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
 def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):

@@ -28,7 +28,6 @@ BASE_SIZE = 50  # Base size for planets in px
 earth_diameter = 12742e3  # Earth's diameter in meters
 PLANET_ZOOM_EXPONENT = 0.5  # Exponent for zoom scaling (0.5 means square root scaling)
 
-
 # Simulation Speed
 TIMESTEP = 3600 * 24.0 # Seconds in 1 day 
 
