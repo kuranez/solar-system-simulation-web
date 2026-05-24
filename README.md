@@ -71,32 +71,6 @@ solar-system-simulation-web/
 
 ---
 
-## 🐳 Deploy from private GHCR image in Plesk
-
-If you deploy `ghcr.io/kuranez/solar-system-sim-web:latest` from Plesk and the package is private, authenticate Plesk to `ghcr.io` first:
-
-1. Create a GitHub Personal Access Token (classic) with at least `read:packages`.
-2. In **Plesk → Docker → Registries** add:
-   - **Registry**: `ghcr.io`
-   - **Username**: your GitHub username
-   - **Password**: the PAT value
-3. Save the registry and use image:
-
-```txt
-ghcr.io/kuranez/solar-system-sim-web:latest
-```
-
-For shell-based deploy steps, login is equivalent to:
-
-```bash
-echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-docker pull ghcr.io/kuranez/solar-system-sim-web:latest
-```
-
-Then keep `GHCR_PAT` only in Plesk secrets/environment and never commit it.
-
----
-
 ## 📕 Resources
 
 [Planetary Data from NASA](https://nssdc.gsfc.nasa.gov/planetary/factsheet/)
