@@ -1,12 +1,5 @@
 .vscode
 __pycache__
-RELEASE_NOTES_v2.0.md
-RELEASE_NOTES_v1.7.md
-solar-system-simulation-web-v.1.4.zip
-solar-system-simulation-web-v.1.7.zip
-docker-compose.yml
-Dockerfile
-app_backup.py
-ui/__pycache__
-simulation/__pycache__
-modules/__pycache__
+**/__pycache__/
+*.pyc
+
