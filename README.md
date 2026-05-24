@@ -42,22 +42,28 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 solar-system-simulation-web/
 │
 ├── app.py                  # Main application entry point. Initializes Panel UI, state, and callbacks.
-│
-├── constants.py            # Central file for all simulation constants (physics, colors, scaling).
-│
-├── modules/
-│   ├── simple_solar_system.py # Logic for creating the full solar system view.
-│   ├── simple_sun_and_earth.py # Logic for creating the Sun-Earth view.
-│   │
-│   └── ui/
-│       ├── css.py          # Contains all custom CSS for theming and styling widgets.
-│       ├── hud.py          # Renders the Heads-Up Display (e.g., elapsed time).
-│       ├── screen.py       # Handles the main Pygame drawing loop and surface-to-PNG conversion.
-│       └── ui_handlers.py  # Contains all callback functions for UI events (e.g., play, pause, zoom).
-│
-└── simulation/
-    ├── solarsystem_sim.py  # Core classes for celestial bodies (Body, Planet, Sun) and their physics.
-    └── solarsystem_scale.py # Logic for calculating the dynamic scaling of planet sizes.
+├── constants.py            # Central file for simulation constants (physics, colors, scaling).
+├── modules/                # Simulation presets and helper generators
+│   ├── simple_solar_system.py 
+│   ├── simple_sun_and_earth.py 
+│   ├── simple_sun_earth_moon.py 
+│   └── simple_earth_moon.py 
+├── objects/                # Runtime body definitions and presets
+│   ├── base.py             
+│   ├── planet.py           
+│   ├── moon.py             
+│   ├── asteroid.py         
+│   └── presets/            
+├── ui/                     # UI components and rendering helpers
+│   ├── css.py
+│   ├── hud.py
+│   ├── screen.py
+│   └── ui_handlers.py
+├── simulation/             # Core simulation engine and scaling utilities
+│   ├── solarsystem_sim.py
+│   └── solarsystem_scale.py
+├── requirements.txt
+└── README.md
 ```
 
 ---
@@ -68,32 +74,6 @@ solar-system-simulation-web/
 - **`panel`**: For building the web interface and serving the application.
 - **`numpy` & `math`**: For numerical operations, particularly in converting Pygame surfaces.
 - **`Pillow`**: For image processing and handling the PNG conversion.
-
----
-
-## 🐳 Deploy from private GHCR image in Plesk
-
-If you deploy `ghcr.io/kuranez/solar-system-sim-web:latest` from Plesk and the package is private, authenticate Plesk to `ghcr.io` first:
-
-1. Create a GitHub Personal Access Token (classic) with at least `read:packages`.
-2. In **Plesk → Docker → Registries** add:
-   - **Registry**: `ghcr.io`
-   - **Username**: your GitHub username
-   - **Password**: the PAT value
-3. Save the registry and use image:
-
-```txt
-ghcr.io/kuranez/solar-system-sim-web:latest
-```
-
-For shell-based deploy steps, login is equivalent to:
-
-```bash
-echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
-docker pull ghcr.io/kuranez/solar-system-sim-web:latest
-```
-
-Then keep `GHCR_PAT` only in Plesk secrets/environment and never commit it.
 
 ---
 
