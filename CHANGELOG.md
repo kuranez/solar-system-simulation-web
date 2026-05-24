@@ -19,6 +19,7 @@ Summary of major jumps in architecture, simulation logic and UI _(timeline, olde
 ## Previous Releases
 
 ### v2.0 - Modular extendable basis for more complex simulations
+
 - Refined the web app into a more complete solar system simulator with multiple views.
 - Added the full solar system view alongside the simpler Sun-Earth scene.
 - Kept live Play/Pause, step controls, zoom, and a clearer modular UI structure.
@@ -28,6 +29,7 @@ Summary of major jumps in architecture, simulation logic and UI _(timeline, olde
 
 - Upgraded the app from the simple Sun-Earth layout to the full solar system.
 - Added zoom controls alongside live play/pause and step controls.
+- Kept the app as a small stable skeleton release for future UI work.
 
 ### v.1.4 - Earth & Sun Simulation
 
