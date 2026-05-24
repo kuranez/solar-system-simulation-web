@@ -1,9 +1,21 @@
 # constants.py 
+# Contains all constants used across the solar system simulation app, including display settings, physical constants, and planetary data.
+# v.1.3 - Tweaked comments and structure for better readability
+
+# Importing necessary libraries and modules
+import pygame # For rendering the simulation
+import math # For mathematical calculations
+
+# Initialize Pygame and Font
+pygame.init()
+pygame.font.init()
 
 # Display Variables
 WIDTH, HEIGHT = 1920, 1080
-COLOR_TEXT = (255, 255, 255)
-COLOR_BACKGROUND = (36, 36, 36)
+COLOR_TEXT = (255, 255, 255) # Pure white for text
+COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
+COLOR_BACKGROUND = (43, 48, 54) # Dark background for better contrast
+FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General
 AU = 149.6e9  # Astronomical Unit in meters
@@ -14,6 +26,7 @@ DEFAULT_SCALE = 350 / AU  # 1 AU = 350 px
 OUTER_PLANET_SCALE_FACTOR = 0.6  # Outer Planets are 40% smaller
 BASE_SIZE = 50  # Base size for planets in px
 earth_diameter = 12742e3  # Earth's diameter in meters
+PLANET_ZOOM_EXPONENT = 0.5  # Exponent for zoom scaling (0.5 means square root scaling)
 
 # Simulation Speed
 TIMESTEP = 3600 * 24.0 # Seconds in 1 day 

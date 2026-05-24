@@ -1,11 +1,14 @@
 # sun_and_earth.py
 # Module to create Sun and Earth system
-# v.1.0 - Initial creation
+# v.1.2 - Tweaked comments and structure for better readability
+# author: kuranez
 
-from simulation import constants
-from simulation.solarsystem_sim import Planet, Sun
-from simulation.solarsystem_scale import calculate_scaled_sizes
+# Importing necessary libraries and modules
+import constants # For simulation constants like scale and colors
+from simulation.solarsystem_sim import Planet, Sun # For defining celestial bodies
+from simulation.solarsystem_scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
 
+# Function to create the Sun and Earth system
 def create_sun_and_earth():
     """Creates the Sun and Earth."""
     # Calculate scaled sizes for Sun and Earth based on current scale
@@ -25,8 +28,10 @@ def create_sun_and_earth():
             earth_radius, # scaled radius
             earth_data["mass"],
             earth_data["name"],
+            earth_data["is_inner"],
             color=constants.COLOR_EARTH
         )
         earth.y_vel = earth_data["velocity"]
         return [sun, earth]
     return [sun] # Return only sun if Earth data is not found
+
