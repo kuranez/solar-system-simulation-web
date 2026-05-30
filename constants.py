@@ -169,6 +169,42 @@ BODIES_DATA = {
         "orbital_velocity": 19300,
         "color": (190, 185, 180),
     },
+    "Pallas": {
+        "name": "Pallas",
+        "type": "asteroid",
+        "position": None, # Pallas has a more complex orbit, so we can set this to None or calculate it dynamically
+        "perihelion": 414.0e9,
+        "aphelion": 510.0e9,
+        "radius": 256e3,
+        "mass": 2.11e20,
+        "semi_major_axis": 2.77 * AU,
+        "orbital_velocity": 17000,
+        "color": (185, 180, 175),
+    },
+    "Hygiea": {
+        "name": "Hygiea",
+        "type": "asteroid",
+        "position": None, # Hygiea has a more complex orbit, so we can set this to None or calculate it dynamically
+        "perihelion": 470.0e9,
+        "aphelion": 540.0e9,
+        "radius": 215e3,
+        "mass": 8.32e19,
+        "semi_major_axis": 3.14 * AU,
+        "orbital_velocity": 15000,
+        "color": (170, 165, 160),
+    },
+    "Eros": {
+        "name": "Eros",
+        "type": "asteroid",
+        "position": None, # Eros has a more complex orbit, so we can set this to None or calculate it dynamically
+        "perihelion": 218.0e9,
+        "aphelion": 250.0e9,
+        "radius": 8.4e3,
+        "mass": 6.69e15,
+        "semi_major_axis": 1.46 * AU,
+        "orbital_velocity": 24000,
+        "color": (200, 190, 185),
+    },
     # Moon (kept as a full spec/template)
     "Moon": {
         "name": "Moon",
@@ -185,6 +221,88 @@ BODIES_DATA = {
         "average_distance": 384400e3,
         "orbital_velocity": 1022,
         "color": (200, 200, 200),
+    },
+    # Saturn's Moons (example with Titan)
+    "Titan": {
+        "name": "Titan",
+        "type": "moon",
+        "position": None, # Titan's position is relative to Saturn, so we can set this to None or calculate it dynamically
+        "parent_body": "Saturn",
+        "perigee": 1.2e9,
+        "apogee": 1.5e9,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 2575e3,
+        "mass": 1.3452e23,
+        "semi_major_axis": 1.22e9,
+        "average_distance": 1.22e9,
+        "orbital_velocity": 5500,
+        "color": (210, 180, 140),
+    },
+    # Jupiter's Moons (example with Europa)
+    "Europa": {
+        "name": "Europa",
+        "type": "moon",
+        "position": None, # Europa's position is relative to Jupiter, so we can set this to None or calculate it dynamically
+        "parent_body": "Jupiter",
+        "perigee": 670900e3,
+        "apogee": 671100e3,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 1560.8e3,
+        "mass": 4.7998e22,
+        "semi_major_axis": 670900e3,
+        "average_distance": 670900e3,
+        "orbital_velocity": 13500,
+        "color": (220, 220, 220),
+    },
+    "Io": {
+        "name": "Io",
+        "type": "moon",
+        "position": None, # Io's position is relative to Jupiter, so we can set this to None or calculate it dynamically
+        "parent_body": "Jupiter",
+        "perigee": 421700e3,
+        "apogee": 422000e3,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 1821.6e3,
+        "mass": 8.9319e22,
+        "semi_major_axis": 421700e3,
+        "average_distance": 421700e3,
+        "orbital_velocity": 17300,
+        "color": (255, 200, 150),
+    },
+    "Ganymede": {
+        "name": "Ganymede",
+        "type": "moon",
+        "position": None, # Ganymede's position is relative to Jupiter, so we can set this to None or calculate it dynamically
+        "parent_body": "Jupiter",
+        "perigee": 1070400e3,
+        "apogee": 1071000e3,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 2634.1e3,
+        "mass": 1.4819e23,
+        "semi_major_axis": 1070400e3,
+        "average_distance": 1070400e3,
+        "orbital_velocity": 10800,
+        "color": (200, 220, 255),
+    },
+    "Callisto": {
+        "name": "Callisto",
+        "type": "moon",
+        "position": None, # Callisto's position is relative to Jupiter, so we can set this to None or calculate it dynamically
+        "parent_body": "Jupiter",
+        "perigee": 1882700e3,
+        "apogee": 1883000e3,
+        "perihelion": None,
+        "apihelion": None,
+        "radius": 2410.3e3,
+        "mass": 1.0759e23,
+        "semi_major_axis": 1882700e3,
+        "average_distance": 1882700e3,
+        "orbital_velocity": 8200,
+        "color": (180, 200, 255),
     },
 }
 
@@ -209,6 +327,16 @@ for _name, entry in BODIES_DATA.items():
 # Asteroid compatibility variables
 ASTEROID_CERES = BODIES_DATA["Ceres"]
 ASTEROID_VESTA = BODIES_DATA["Vesta"]
+ASTEROID_PALLAS = BODIES_DATA["Pallas"]
+ASTEROID_HYGIEA = BODIES_DATA["Hygiea"]
+ASTEROID_EROS = BODIES_DATA["Eros"]
 
 # MOON_DATA kept for compatibility
 MOON_DATA = BODIES_DATA["Moon"]
+
+# Other moons
+MOON_TITAN = BODIES_DATA["Titan"]
+MOON_EUROPA = BODIES_DATA["Europa"]
+MOON_IO = BODIES_DATA["Io"]
+MOON_GANYMEDE = BODIES_DATA["Ganymede"]
+MOON_CALLISTO = BODIES_DATA["Callisto"]
