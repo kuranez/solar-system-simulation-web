@@ -31,7 +31,7 @@
 import panel as pn # For building the web interface
 import constants # For simulation constants like scale and colors
 from simulation.solarsystem_scale import calculate_scaled_sizes # For updating body sizes based on current scale
-from .screen import pygame_surface_to_PNGbuf, draw_frame # For rendering the simulation and converting to PNG for Panel display
+from .canvas import sync_canvas_frame # For browser-side canvas rendering
 
 def advance_simulation(bodies, state):
     """Advances the simulation by one logical frame.
@@ -174,29 +174,43 @@ def apply_zoom_for_view(current_solarsystem, state, scale, view_cfg):
         update_body_radii(current_solarsystem, state["distance_scale"])
 
 # Event handlers for UI buttons
-def on_step(event, screen, bodies, state, color_bg, img_pane):
+def on_step(event, bodies, state, color_bg, canvas_view):
     """Handles the 'Next Frame' button click."""
     advance_simulation(bodies, state)
-    draw_frame(screen, bodies, state, color_bg)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    sync_canvas_frame(
+        canvas_view,
+        bodies,
+        state,
+        color_bg,
+        scene_token=state.get('scene_token', 1),
+        reset=False,
+    )
 
-def periodic_update(screen, bodies, state, color_bg, img_pane):
+def periodic_update(bodies, state, color_bg, canvas_view):
     """Function called periodically when the simulation is playing."""
     advance_simulation(bodies,state)
-    draw_frame(screen, bodies, state, color_bg)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    sync_canvas_frame(
+        canvas_view,
+        bodies,
+        state,
+        color_bg,
+        scene_token=state.get('scene_token', 1),
+        reset=False,
+    )
 
-def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
+def play_pause(event, state, bodies, color_bg, canvas_view, play_button):
     """Handles the 'Play/Pause' button click."""
     if not state['is_playing']:
         state['is_playing'] = True
         play_button.name = "Pause"
         play_button.icon = "player-pause"
         play_button.button_type = "danger"
-        # Start periodic updates (e.g., 20 FPS)
+        # Start periodic updates. Use a configurable period to lower CPU/network
+        # pressure in slower browsers (Firefox). Default to 80ms (~12.5 FPS).
+        period = state.get('frame_period', 80)
         state['callback'] = pn.state.add_periodic_callback(
-            lambda: periodic_update(screen, bodies, state, color_bg, img_pane),
-            period=50
+            lambda: periodic_update(bodies, state, color_bg, canvas_view),
+            period=period
         )
     else:
         state['is_playing'] = False
@@ -207,7 +221,7 @@ def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
             state['callback'].stop()
             state['callback'] = None
 
-def stop_and_reset(event, state, screen, bodies, color_bg, img_pane, play_button):
+def stop_and_reset(event, state, bodies, color_bg, canvas_view, play_button):
     """Stop playback and reset the elapsed simulation time."""
     if state.get('is_playing'):
         state['is_playing'] = False
@@ -218,10 +232,17 @@ def stop_and_reset(event, state, screen, bodies, color_bg, img_pane, play_button
             state['callback'] = None
 
     state['total_elapsed_time'] = 0.0
-    draw_frame(screen, bodies, state, color_bg)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    state['scene_token'] = state.get('scene_token', 1) + 1
+    sync_canvas_frame(
+        canvas_view,
+        bodies,
+        state,
+        color_bg,
+        scene_token=state['scene_token'],
+        reset=True,
+    )
 
-def zoom_in(event, state, current_solarsystem, screen, color_bg, img_pane):
+def zoom_in(event, state, current_solarsystem, color_bg, canvas_view):
     """Handles the 'Zoom In' button click with full redraw logic."""
     # Increase scale
     state['distance_scale'] *= 1.1 
@@ -230,10 +251,17 @@ def zoom_in(event, state, current_solarsystem, screen, color_bg, img_pane):
     
     # Recalculate planet sizes and redraw the frame
     update_body_radii(current_solarsystem, state['distance_scale'])
-    draw_frame(screen, current_solarsystem, state, color_bg)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    state['scene_token'] = state.get('scene_token', 1) + 1
+    sync_canvas_frame(
+        canvas_view,
+        current_solarsystem,
+        state,
+        color_bg,
+        scene_token=state['scene_token'],
+        reset=True,
+    )
 
-def zoom_out(event, state, current_solarsystem, screen, color_bg, img_pane):
+def zoom_out(event, state, current_solarsystem, color_bg, canvas_view):
     """Handles the 'Zoom Out' button click with full redraw logic."""
     # Decrease scale
     state['distance_scale'] /= 1.1
@@ -242,5 +270,12 @@ def zoom_out(event, state, current_solarsystem, screen, color_bg, img_pane):
 
     # Recalculate planet sizes and redraw the frame
     update_body_radii(current_solarsystem, state['distance_scale'])
-    draw_frame(screen, current_solarsystem, state, color_bg)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    state['scene_token'] = state.get('scene_token', 1) + 1
+    sync_canvas_frame(
+        canvas_view,
+        current_solarsystem,
+        state,
+        color_bg,
+        scene_token=state['scene_token'],
+        reset=True,
+    )

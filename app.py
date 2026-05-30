@@ -9,8 +9,6 @@
 
 """
 
-# Importing system libraries
-import io # For in-memory byte streams
 import sys # For modifying the Python path to include the simulation package
 import os
 import socket
@@ -19,11 +17,6 @@ import socket
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules')))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'ui')))
-
-# Importing necessary libraries
-import numpy as np # For numerical operations and array handling
-from PIL import Image # For image processing and conversion between Pygame surfaces and PNG format
-import pygame # For off-screen rendering of the solar system simulation
 
 import panel as pn # For building the web interface
 
@@ -37,7 +30,7 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
-from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
+from ui.canvas import SimulationCanvas, sync_canvas_frame
 from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
@@ -45,11 +38,8 @@ from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, per
 pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
 # pn.extension() 
 
-# Pygame initialization (off-screen)
-pygame.display.init()
-width, height = 1600, 740  # Default dimensions, can be adjusted as needed
-screen = pygame.Surface((width, height))
-screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
+# Canvas dimensions are still driven by the simulation constants.
+width, height = constants.WIDTH, constants.HEIGHT
 
 # Simulation setup
 SIMULATION_VIEWS = {
@@ -115,6 +105,8 @@ state = {
     'offset_x': width // 2,
     'offset_y': height // 2,
     'total_elapsed_time': 0.0, # Total elapsed simulation time in seconds
+    'frame_period': 50,
+    'scene_token': 1,
 }
 
 # Controls for Panel UI
@@ -151,10 +143,16 @@ zoom_slider = pn.widgets.FloatSlider(
     stylesheets=[CUSTOM_SLIDER_CSS],
 )
 
-# Initial render of the simulation frame
-draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
-img_bytes = pygame_surface_to_PNGbuf(screen)
-img_pane = pn.pane.PNG(img_bytes, width=None, height=None, sizing_mode="stretch_both", margin=0, align="center", css_classes=["app-viewer"])
+# Browser-side canvas view.
+canvas_view = SimulationCanvas(sizing_mode="stretch_both", margin=0, align="center", css_classes=["app-viewer"])
+sync_canvas_frame(
+    canvas_view,
+    current_solarsystem,
+    state,
+    constants.COLOR_BACKGROUND,
+    scene_token=state['scene_token'],
+    reset=True,
+)
 
 # Callback functions
 def update_view(event):
@@ -167,7 +165,7 @@ def update_view(event):
     
     # Stop the current simulation if it's playing
     if state['is_playing']:
-        play_pause(None, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button)
+        play_pause(None, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button)
 
     # Reset elapsed simulation time whenever the user changes views
     state['total_elapsed_time'] = 0.0
@@ -178,10 +176,17 @@ def update_view(event):
     # Apply per-view base scale so each simulation can define its own distance mapping.
     state['base_distance_scale'] = SIMULATION_VIEWS[view_name]['base_scale']
     apply_zoom_for_view(current_solarsystem, state, zoom_slider.value, SIMULATION_VIEWS[view_name])
+    state['scene_token'] += 1
     
-    # Redraw the scene with the new system
-    draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    # Push a reset frame to clear the browser-side trail state.
+    sync_canvas_frame(
+        canvas_view,
+        current_solarsystem,
+        state,
+        constants.COLOR_BACKGROUND,
+        scene_token=state['scene_token'],
+        reset=True,
+    )
 
 # Attach the callback to the view selector
 view_select.param.watch(update_view, 'value')
@@ -189,24 +194,31 @@ view_select.param.watch(update_view, 'value')
 def on_zoom_change(event):
     view_cfg = SIMULATION_VIEWS[view_select.value]
     apply_zoom_for_view(current_solarsystem, state, event.new, view_cfg)
+    state['scene_token'] += 1
 
-    draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
-    img_pane.object = pygame_surface_to_PNGbuf(screen)
+    sync_canvas_frame(
+        canvas_view,
+        current_solarsystem,
+        state,
+        constants.COLOR_BACKGROUND,
+        scene_token=state['scene_token'],
+        reset=True,
+    )
 
 # Attach the callback to the slider
 zoom_slider.param.watch(on_zoom_change, 'value')
 
 # Attach event handlers to buttons
-step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state, constants.COLOR_BACKGROUND, img_pane))
-play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
+step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
+play_button.on_click(lambda event: play_pause(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 # reset_button.on_click(lambda event: stop_and_reset(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
-# zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
-# zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
+# zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
+# zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 
 # Layout for Panel UI
 # ---------------------------------------------
 controls = pn.Row(play_button, step_button, zoom_slider, view_select, align="center", sizing_mode="fixed", width=920, height=60, margin=0, css_classes=["app-controls"])
-app = pn.Column(controls, img_pane, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
+app = pn.Column(controls, canvas_view, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
 
 
 if __name__ == "__main__":

@@ -16,6 +16,9 @@ def render_hud(screen, bodies, state):
     y_offset = [0]
     sun = next((body for body in bodies if getattr(body, "is_sun", False)), None)
 
+    def _parent_of(body):
+        return getattr(body, "parent_body", None) or getattr(body, "child_of", None)
+
     def _distance_between(body_a, body_b):
         return (((body_a.x - body_b.x) ** 2 + (body_a.y - body_b.y) ** 2) ** 0.5)
 
@@ -30,6 +33,10 @@ def render_hud(screen, bodies, state):
         return f"{distance / 1000:,.0f} km from {parent.name}"
 
     def _render_row(body, parent, depth):
+        if body in rendered:
+            return
+        rendered.add(body)
+
         indent = 10 + (depth * 20)
         prefix = "- " if depth > 0 else ""
 
@@ -84,21 +91,22 @@ def render_hud(screen, bodies, state):
 
     # Build mapping parent -> [children]. Prefer authoritative `parent.children`.
     children_map = defaultdict(list)
+    rendered = set()
     for body in bodies:
         parent_children = getattr(body, "children", None)
         if parent_children:
             for child in parent_children:
-                children_map[body].append(child)
+                if child not in children_map[body]:
+                    children_map[body].append(child)
 
     # Fallback for legacy parent_body links.
     for body in bodies:
-        parent = getattr(body, "parent_body", None)
+        parent = _parent_of(body)
         if parent is not None and body not in children_map.get(parent, []):
             children_map[parent].append(body)
 
     # Render roots first, then their descendants.
-    roots = [body for body in bodies if getattr(body, "parent_body", None) is None]
-    rendered = set()
+    roots = [body for body in bodies if _parent_of(body) is None]
     for root in roots:
         if root in rendered:
             continue

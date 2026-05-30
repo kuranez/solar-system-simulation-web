@@ -7,6 +7,7 @@
 
 # Importing necessary libraries
 import io
+import zlib
 from PIL import Image
 import numpy as np
 import pygame
@@ -38,13 +39,25 @@ def draw_frame(screen, bodies, state, color_bg=constants.COLOR_BACKGROUND):
     render_hud(screen, bodies, state)
 
 # Function to convert Pygame surface to PNG buffer for Panel display
-def pygame_surface_to_PNGbuf(surface):
-    """Converts a Pygame surface to a PNG buffer for Panel display."""
+def pygame_surface_to_PNGbuf(surface, downscale=1):
+    """Converts a Pygame surface to a PNG buffer for Panel display.
+
+    Returns a tuple (bytes, checksum) where `checksum` is an Adler32 of
+    the raw surface bytes so callers can cheaply detect unchanged frames.
+    If `downscale` > 1 the image will be resized (integer factor) before
+    PNG encoding to reduce bandwidth and encoding time.
+    """
     raw_pixels = pygame.image.tostring(surface, "RGB", False)
+    checksum = zlib.adler32(raw_pixels) & 0xFFFFFFFF
+
     img = Image.frombytes("RGB", surface.get_size(), raw_pixels)
+
+    if downscale and downscale > 1:
+        w, h = img.size
+        img = img.resize((max(1, w // downscale), max(1, h // downscale)), Image.LANCZOS)
 
     buffer = io.BytesIO()
     img.save(buffer, format="PNG", compress_level=1)
-    return buffer.getvalue()
+    return buffer.getvalue(), checksum
 
 

@@ -38,9 +38,3 @@ class Planet(Body):
 	def draw(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		super().draw(display_surface, distance_scale, screen_offset_x, screen_offset_y)
 		x, y = self._screen_position(distance_scale, screen_offset_x, screen_offset_y)
-
-		if self.flash_timer > 0:
-			flash_intensity = self.flash_timer / self.flash_duration
-			flash_radius = int(self.radius * (1.5 + flash_intensity))
-			flash_color = (255, 255, 200)
-			pygame.draw.circle(display_surface, flash_color, (int(x), int(y)), flash_radius, 2)
