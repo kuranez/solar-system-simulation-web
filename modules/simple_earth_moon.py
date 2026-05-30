@@ -1,6 +1,7 @@
 """Create a simple Earth-Moon system using object presets."""
 
 import constants
+from simulation.scene import EARTH_MOON_SCENE
 
 from objects import create_earth, create_moon
 
@@ -16,12 +17,12 @@ def create_earth_moon_system():
     earth.draw_line = False
     earth.x = 0
     earth.y = 0
-    earth.original_radius = 18
+    earth.original_radius = EARTH_MOON_SCENE["earth_radius_px"]
 
     moon = create_moon(earth)
     moon.static_body = False
     moon.draw_line = True
-    moon.original_radius = 5
-    moon.y_vel = constants.MOON_DATA["orbital_velocity"]
+    moon.original_radius = EARTH_MOON_SCENE["moon_radius_px"]
+    moon.y_vel = EARTH_MOON_SCENE["moon_velocity"]
 
     return [earth, moon]

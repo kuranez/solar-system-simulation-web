@@ -1,6 +1,7 @@
 """Create a simple Sun-Earth system using object presets."""
 
 import constants
+from simulation.scene import SUN_EARTH_SCENE
 
 from objects import create_sun, create_earth
 
@@ -15,7 +16,7 @@ def create_sun_earth_system():
     sun.draw_line = False
     sun.x = 0
     sun.y = 0
-    sun.original_radius = 2
+    sun.original_radius = SUN_EARTH_SCENE["sun_radius_px"]
 
     earth = create_earth()
     earth.static_body = False
@@ -23,7 +24,7 @@ def create_sun_earth_system():
     earth.child_of = sun
     earth.parent_body = sun
     sun.children.append(earth)
-    earth.original_radius = 18
-    earth.y_vel = constants.BODIES_DATA["Earth"]["orbital_velocity"]
+    earth.original_radius = SUN_EARTH_SCENE["earth_radius_px"]
+    earth.y_vel = SUN_EARTH_SCENE["earth_velocity"]
 
     return [sun, earth]

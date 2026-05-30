@@ -1,6 +1,7 @@
 """Create a simple stationary Sun-Earth-Moon system."""
 
 from objects.base import Body
+from simulation.scene import SUN_EARTH_MOON_SCENE
 
 import constants
 
@@ -20,8 +21,8 @@ def create_sun_earth_moon_system(
     moon_radius_px = max(1, int(earth_radius_px / earth_radius_ratio))
 
     # Visual baseline for proportional view (pixels)
-    sun_earth_base_px = 420
-    earth_moon_ratio = 0.257
+    sun_earth_base_px = SUN_EARTH_MOON_SCENE["sun_earth_base_px"]
+    earth_moon_ratio = SUN_EARTH_MOON_SCENE["earth_moon_ratio"]
 
     # Place Sun at origin (meters)
     sun = Body(0.0, 0.0, sun_radius_px, constants.sun_mass, name="Sun", color=constants.COLOR_SUN, is_sun=True)

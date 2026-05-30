@@ -22,15 +22,12 @@ import panel as pn # For building the web interface
 
 # Importing from the simulation package
 import constants # For simulation constants like scale and colors
-from modules.simple_solar_system import create_solar_system
-from modules.simple_sun_earth import create_sun_earth_system
-from modules.simple_earth_moon import create_earth_moon_system
-from modules.simple_sun_earth_moon import create_sun_earth_moon_system
+from simulation.scene import build_simulation_views
 
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
 from ui.canvas import SimulationCanvas, sync_canvas_frame
-from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, periodic_update, play_pause, stop_and_reset, update_proportional_sun_earth_moon, update_simple_earth_moon, update_body_radii
+from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, periodic_update, play_pause, stop_and_reset, refresh_speed_display
 
 
 # Initialize Panel extension
@@ -40,43 +37,7 @@ pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
 # Canvas dimensions are still driven by the simulation constants.
 width, height = constants.WIDTH, constants.HEIGHT
 
-# Simulation setup
-SIMULATION_VIEWS = {
-        "[Simple] Sun and Earth": {
-        "title": "Simple Sun and Earth System",
-        "description": "A simulation of the Sun and Earth system.",
-        "generator": create_sun_earth_system,
-        "base_scale": constants.DEFAULT_SCALE,
-        "zoom_updater": None,
-        "scale_mode": "distance",
-    },
-    "[Simple] Earth and Moon": {
-        "title": "Simple Earth and Moon System",
-        "description": "A simulation of the Earth and Moon system.",
-        "generator": create_earth_moon_system,
-        "base_scale": 350 / constants.MOON_DATA["average_distance"],
-        "scale_mode": "distance",
-        "zoom_updater": update_simple_earth_moon,
-    },
-    "[Simple] Sun, Earth, and Moon System": {
-        "title": "Sun, Earth, and Moon System",
-        "description": "A simulation of the Sun, Earth, and Moon system.",
-        "generator": create_sun_earth_moon_system,
-        "base_scale": 1.0,
-        "zoom_updater": update_proportional_sun_earth_moon, # Custom updater for proportional scaling of the Sun-Earth-Moon system
-        "scale_mode": "proportional", # This view will use proportional scaling for both distance and size based on the slider
-        "sun_earth_base_px": 420, # Base pixel distance for Sun-Earth at default scale
-        "earth_moon_ratio": 0.257, # Ratio of Earth-Moon
-    },
-    "[Simple] Solar System": {
-        "title": "Simple Solar System (Planets only, no asteroids)",
-        "description": "A simulation of the simple solar system with planets only.",
-        "generator": create_solar_system,
-        "base_scale": constants.DEFAULT_SCALE, 
-        "scale_mode": "distance", # This view will use distance scaling for the zoom slider 
-        "zoom_updater": None, # No custom updater, will use the default distance scaling logic in on_zoom_change
-    },
-}
+SIMULATION_VIEWS = build_simulation_views()
 
 initial_view_name = "[Simple] Solar System"
 current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
@@ -86,10 +47,11 @@ def choose_serve_port(preferred_port=5000):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind(("127.0.0.1", preferred_port))
+            return preferred_port
     except OSError:
-        return 0
-
-    return preferred_port
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", 0))
+            return sock.getsockname()[1]
 
 
 # State variables for app
@@ -100,12 +62,17 @@ state = {
     'callback': None,
     'base_distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'],
     'distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'], # orbital distance scaling
+    'simulation_timestep': SIMULATION_VIEWS[initial_view_name].get('scene', {}).get('simulation_timestep', constants.TIMESTEP),
     'planet_scale': 1.0, # planet size scaling (can be adjusted separately if needed)
     'offset_x': width // 2,
     'offset_y': height // 2,
     'total_elapsed_time': 0.0, # Total elapsed simulation time in seconds
-    'frame_period': 50,
+    'frame_period': 10,
     'scene_token': 1,
+    'render_stride': 1.0,
+    'render_skip_counter': 0.0,
+    'max_completed_orbit_trails': SIMULATION_VIEWS[initial_view_name]['max_completed_orbit_trails'],
+    'min_orbits_before_prune': SIMULATION_VIEWS[initial_view_name]['min_orbits_before_prune'],
 }
 
 # Controls for Panel UI
@@ -128,6 +95,12 @@ play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="su
 reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 slower_button = pn.widgets.Button(name="Slower", icon="minus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 faster_button = pn.widgets.Button(name="Faster", icon="plus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+# speed_status = pn.pane.Str(
+#     f"Step: {state['simulation_timestep'] / 86400.0:.1f} d/frame",
+#     margin=(0, 12, 0, 12),
+#     styles={"font-size": "13px", "line-height": "42px", "white-space": "nowrap"},
+# )
+# state['speed_status'] = speed_status
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
@@ -157,13 +130,19 @@ def update_view(event):
 
     # Reset elapsed simulation time whenever the user changes views
     state['total_elapsed_time'] = 0.0
+    state['render_skip_counter'] = 0.0
 
     # Load the new set of celestial bodies
     current_solarsystem = SIMULATION_VIEWS[view_name]["generator"]()
 
     # Apply per-view base scale so each simulation can define its own distance mapping.
     state['base_distance_scale'] = SIMULATION_VIEWS[view_name]['base_scale']
+    state['simulation_timestep'] = SIMULATION_VIEWS[view_name].get('scene', {}).get('simulation_timestep', constants.TIMESTEP)
+    state['render_stride'] = 1.0
+    state['max_completed_orbit_trails'] = SIMULATION_VIEWS[view_name]['max_completed_orbit_trails']
+    state['min_orbits_before_prune'] = SIMULATION_VIEWS[view_name]['min_orbits_before_prune']
     apply_zoom_for_view(current_solarsystem, state, 1.0, SIMULATION_VIEWS[view_name])
+    refresh_speed_display(canvas_view, state)
     state['scene_token'] += 1
     
     # Push a reset frame to clear the browser-side trail state.
@@ -182,21 +161,26 @@ view_select.param.watch(update_view, 'value')
 # Attach event handlers to buttons
 # step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
 play_button.on_click(lambda event: play_pause(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
+reset_button.on_click(lambda event: stop_and_reset(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 slower_button.on_click(lambda event: decrease_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 faster_button.on_click(lambda event: increase_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
-# reset_button.on_click(lambda event: stop_and_reset(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
 # zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 # zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row(play_button, slower_button, faster_button, pn.layout.HSpacer(), view_select, align="center", sizing_mode="fixed", width=1120, height=60, margin=0, css_classes=["app-controls"])
+controls = pn.Row(play_button, reset_button, slower_button, faster_button, pn.layout.HSpacer(), view_select, align="center", sizing_mode="fixed", width=1120, height=60, margin=0, css_classes=["app-controls"])
 app = pn.Column(controls, canvas_view, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
 
 
 if __name__ == "__main__":
     serve_port = choose_serve_port(int(os.environ.get("PORT", "5000")))
-    if serve_port == 0:
-        print("Port 5000 is busy; starting Panel on a free port instead.")
+    if serve_port != int(os.environ.get("PORT", "5000")):
+        print(f"Port {os.environ.get('PORT', '5000')} is busy; starting Panel on port {serve_port} instead.")
 
-    pn.serve(app, port=serve_port, show=True)
+    pn.serve(
+        app,
+        port=serve_port,
+        show=True,
+        allow_websocket_origin=[f"localhost:{serve_port}", f"127.0.0.1:{serve_port}"],
+    )

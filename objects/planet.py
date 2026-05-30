@@ -26,15 +26,5 @@ class Planet(Body):
 		super().__init__(x, y, radius, mass, name=name, color=color or next(Planet.cycle_colors))
 		self.is_inner_planet = is_inner_planet
 
-		self.flash_timer = 0
-		self.flash_duration = 10
-
-	def update_position(self, current_solarsystem):
-		super().update_position(current_solarsystem)
-
-		if self.flash_timer > 0:
-			self.flash_timer -= 1
-
 	def draw(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		super().draw(display_surface, distance_scale, screen_offset_x, screen_offset_y)
-		x, y = self._screen_position(distance_scale, screen_offset_x, screen_offset_y)

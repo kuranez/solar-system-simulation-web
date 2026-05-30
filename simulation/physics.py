@@ -48,7 +48,7 @@ def find_sun(current_solarsystem):
 	return None
 
 
-def advance_body(body, current_solarsystem, timestep=None):
+def advance_body(body, current_solarsystem, timestep=None, frame_timestep=None):
 	"""Advance a body using Newtonian gravity against the supplied system."""
 	if getattr(body, "static_body", False):
 		return
@@ -89,9 +89,13 @@ def advance_body(body, current_solarsystem, timestep=None):
 		rel_x = body.x
 		rel_y = body.y
 
-	body.orbit.append((rel_x, rel_y))
-	if len(body.orbit) > 50000:
-		body.orbit.pop(0)
+	record_orbit_point = getattr(body, "record_orbit_point", None)
+	if callable(record_orbit_point):
+		record_orbit_point((rel_x, rel_y), frame_timestep=frame_timestep)
+	else:
+		body.orbit.append((rel_x, rel_y))
+		if len(body.orbit) > 50000:
+			body.orbit.pop(0)
 
 	orbit_checker = getattr(body, "_check_orbit_completion", None)
 	if callable(orbit_checker):

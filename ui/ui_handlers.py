@@ -28,6 +28,8 @@
 """
 
 # Importing necessary libraries
+import time
+
 import panel as pn # For building the web interface
 import constants # For simulation constants like scale and colors
 from simulation.scale import calculate_scaled_sizes # For updating body sizes based on current scale
@@ -35,8 +37,18 @@ from .canvas import sync_canvas_frame # For browser-side canvas rendering
 
 
 SPEED_STEP_MS = 10
-MIN_FRAME_PERIOD = 1
-MAX_FRAME_PERIOD = 150
+MIN_FRAME_PERIOD = 10
+MAX_FRAME_PERIOD = 500
+SIMULATION_SPEED_PRESETS = [
+    {"simulation_timestep": 1.0 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 1.5 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 2 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 3 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.5},
+    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.75},
+    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 2.0},
+]
 
 
 def _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button):
@@ -44,30 +56,75 @@ def _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button
         state['callback'].stop()
         state['callback'] = None
 
+    state['last_tick_time'] = time.monotonic()
+    state['render_skip_counter'] = 0.0
+
     state['callback'] = pn.state.add_periodic_callback(
         lambda: periodic_update(bodies, state, color_bg, canvas_view),
-        period=state.get('frame_period', 80)
+        period=state.get('frame_period', 10)
     )
 
 
 def _set_frame_period(state, period_ms):
     state['frame_period'] = max(MIN_FRAME_PERIOD, min(MAX_FRAME_PERIOD, int(period_ms)))
 
+def _step_simulation_timestep(state, direction):
+    current_timestep = float(state.get('simulation_timestep', constants.TIMESTEP))
+    current_stride = float(state.get('render_stride', 1.0))
+    current_index = 0
+    for index, preset in enumerate(SIMULATION_SPEED_PRESETS):
+        if preset["simulation_timestep"] == current_timestep and preset["render_stride"] == current_stride:
+            current_index = index
+            break
+        if preset["simulation_timestep"] <= current_timestep:
+            current_index = index
+
+    new_index = max(0, min(len(SIMULATION_SPEED_PRESETS) - 1, current_index + direction))
+    preset = SIMULATION_SPEED_PRESETS[new_index]
+    state['simulation_timestep'] = preset["simulation_timestep"]
+    state['render_stride'] = preset["render_stride"]
+    state['render_skip_counter'] = 0.0
+    return preset
+
+
+def _sync_speed_status(state):
+    # Removed as speed status is now only displayed in the HUD.
+    pass
+
+
+
+
 
 def increase_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
-    """Increase simulation speed by reducing the frame period in small steps."""
-    _set_frame_period(state, state.get('frame_period', 80) - SPEED_STEP_MS)
-    if state.get('is_playing'):
-        _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button)
+    """Increase simulation speed by raising the simulated time advanced per frame."""
+    _step_simulation_timestep(state, +1)
+    refresh_speed_display(canvas_view, state)
+
+    sync_canvas_frame(
+        canvas_view,
+        bodies,
+        state,
+        color_bg,
+        scene_token=state.get('scene_token', 1),
+        reset=False,
+    )
 
 
 def decrease_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
-    """Decrease simulation speed by increasing the frame period in small steps."""
-    _set_frame_period(state, state.get('frame_period', 80) + SPEED_STEP_MS)
-    if state.get('is_playing'):
-        _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button)
+    """Decrease simulation speed by lowering the simulated time advanced per frame."""
+    _step_simulation_timestep(state, -1)
+    refresh_speed_display(canvas_view, state)
 
-def advance_simulation(bodies, state):
+    sync_canvas_frame(
+        canvas_view,
+        bodies,
+        state,
+        color_bg,
+        scene_token=state.get('scene_token', 1),
+        reset=False,
+    )
+
+def advance_simulation(bodies, state, time_scale=1.0):
     """Advances the simulation by one logical frame.
 
     To keep close-orbit dynamics stable we integrate using the smallest
@@ -78,13 +135,15 @@ def advance_simulation(bodies, state):
     dynamic_ts = [getattr(b, 'TIMESTEP', constants.TIMESTEP) for b in bodies if not getattr(b, 'static_body', False)]
     if not dynamic_ts:
         return
-    step_dt = min(dynamic_ts)
-    # Number of substeps to reach roughly one 'frame' worth of simulated time
-    substeps = max(1, int(round(constants.TIMESTEP / step_dt)))
+    frame_timestep = float(state.get('simulation_timestep', constants.TIMESTEP))
+    simulation_timestep = frame_timestep * max(0.0, float(time_scale))
+    base_step_dt = min(dynamic_ts)
+    substeps = max(1, int(round(simulation_timestep / base_step_dt)))
+    step_dt = simulation_timestep / substeps
 
     for _ in range(substeps):
         for body in bodies:
-            body.update_position(bodies)
+            body.update_position(bodies, timestep=step_dt, frame_timestep=frame_timestep)
         # accumulate simulated time
         state['total_elapsed_time'] = state.get('total_elapsed_time', 0.0) + step_dt
 
@@ -222,7 +281,20 @@ def on_step(event, bodies, state, color_bg, canvas_view):
 
 def periodic_update(bodies, state, color_bg, canvas_view):
     """Function called periodically when the simulation is playing."""
-    advance_simulation(bodies,state)
+    now = time.monotonic()
+    last_tick_time = state.get('last_tick_time', now)
+    state['last_tick_time'] = now
+    nominal_period = max(1, int(state.get('frame_period', 10))) / 1000.0
+    elapsed = max(0.0, now - last_tick_time)
+    time_scale = elapsed / nominal_period if nominal_period > 0 else 1.0
+    advance_simulation(bodies, state, time_scale=time_scale)
+    render_stride = max(1.0, float(state.get('render_stride', 1.0)))
+    render_skip_counter = float(state.get('render_skip_counter', 0.0)) + 1.0
+    if render_skip_counter < render_stride:
+        state['render_skip_counter'] = render_skip_counter
+        return
+
+    state['render_skip_counter'] = render_skip_counter - render_stride
     sync_canvas_frame(
         canvas_view,
         bodies,
@@ -250,6 +322,7 @@ def play_pause(event, state, bodies, color_bg, canvas_view, play_button):
         if state['callback']:
             state['callback'].stop()
             state['callback'] = None
+        state['last_tick_time'] = None
 
 def stop_and_reset(event, state, bodies, color_bg, canvas_view, play_button):
     """Stop playback and reset the elapsed simulation time."""
@@ -263,6 +336,8 @@ def stop_and_reset(event, state, bodies, color_bg, canvas_view, play_button):
 
     state['total_elapsed_time'] = 0.0
     state['scene_token'] = state.get('scene_token', 1) + 1
+    state['render_skip_counter'] = 0.0
+    state['last_tick_time'] = None
     sync_canvas_frame(
         canvas_view,
         bodies,
@@ -309,3 +384,21 @@ def zoom_out(event, state, current_solarsystem, color_bg, canvas_view):
         scene_token=state['scene_token'],
         reset=True,
     )
+
+def refresh_speed_display(canvas_view, state):
+    frame_data = dict(canvas_view.frame_data or {})
+    frame_data["simulation_timestep"] = state["simulation_timestep"]
+
+    stride = state.get("render_stride", 1.0)
+
+    if stride > 1:
+        frame_data["speed_text"] = (
+            f"Step: {state['simulation_timestep']/86400:.1f} d/frame "
+            f"| Render x{stride:g}"
+        )
+    else:
+        frame_data["speed_text"] = (
+            f"Step: {state['simulation_timestep']/86400:.1f} d/frame"
+        )
+
+    canvas_view.frame_data = frame_data

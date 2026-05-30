@@ -82,7 +82,7 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  const bg = Array.isArray(activePayload.background) ? activePayload.background : [6, 11, 21]
 		  const bgColor = `rgb(${bg[0]}, ${bg[1]}, ${bg[2]})`
 		  const textColor = activePayload.text_color ? `rgb(${activePayload.text_color[0]}, ${activePayload.text_color[1]}, ${activePayload.text_color[2]})` : 'rgb(230, 181, 110)'
-		  const trailFadeAlpha = typeof activePayload.trail_fade_alpha === 'number' ? activePayload.trail_fade_alpha : 0.08
+		  const trailFadeAlpha = typeof activePayload.trail_fade_alpha === 'number' ? activePayload.trail_fade_alpha : 0.028
 		  const maxTrailPoints = activePayload.max_trail_points || 1800
 		  const AU_METERS = 149597870700
 		  const effectiveDistanceScale = (typeof activePayload.distance_scale === 'number' ? activePayload.distance_scale : 0) * canvasState.viewZoom
@@ -90,7 +90,7 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  const auPerPixel = metersPerPixel / AU_METERS
 		  const scaleText = effectiveDistanceScale ? `Scale: ${metersPerPixel.toExponential(2)} m/px | ${auPerPixel.toExponential(2)} AU/px` : activePayload.scale_text
 
-		  if (resized || sceneChanged || activePayload.reset) {
+		  if (sceneChanged || activePayload.reset) {
 		    canvasState.trails = {}
 		    canvasState.sceneId = sceneId
 		  }
@@ -104,35 +104,71 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  applyWorldTransform(trailCtx)
 		  trailCtx.lineJoin = 'round'
 		  trailCtx.lineCap = 'round'
+		  const smoothstep = (edge0, edge1, value) => {
+		    const t = clamp((value - edge0) / Math.max(1e-6, edge1 - edge0), 0, 1)
+		    return t * t * (3 - (2 * t))
+		  }
+
+		  const drawTrailPoints = (points, alphaMultiplier, color, lineWidth, edgeFadeRatio, softenBothEnds) => {
+		    if (!Array.isArray(points) || points.length < 2) {
+		      return
+		    }
+		    const edgePoints = Math.max(1, Math.round(points.length * Math.max(0.02, edgeFadeRatio || 0.1)))
+		    for (let i = 1; i < points.length; i += 1) {
+		      const progress = i / Math.max(1, points.length - 1)
+		      const fadeIn = smoothstep(0, edgePoints, i)
+		      const fadeOut = softenBothEnds ? smoothstep(0, edgePoints, (points.length - 1) - i) : 1
+		      const edgeWeight = softenBothEnds ? Math.min(fadeIn, fadeOut) : fadeIn
+		      const alpha = clamp((trailFadeAlpha + (0.38 * Math.pow(progress, 1.12))) * alphaMultiplier * edgeWeight, 0.015, 0.72)
+		      trailCtx.beginPath()
+		      trailCtx.moveTo(points[i - 1].x, points[i - 1].y)
+		      trailCtx.lineTo(points[i].x, points[i].y)
+		      trailCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`
+		      trailCtx.lineWidth = lineWidth
+		      trailCtx.stroke()
+		    }
+		  }
 
 		  for (const body of activePayload.bodies) {
 		    const point = { x: body.x, y: body.y }
 		    const bodyKey = body.name || `${point.x}:${point.y}`
-		    const history = canvasState.trails[bodyKey] || []
+		    const currentOrbitCount = typeof body.orbit_count === 'number' ? body.orbit_count : 0
+		    const storedTrailState = canvasState.trails[bodyKey]
+		    const trailState = (storedTrailState && typeof storedTrailState === 'object' && !Array.isArray(storedTrailState)) ? storedTrailState : {
+		      completed: [],
+		      active: [],
+		      lastOrbitCount: currentOrbitCount,
+		    }
+		    trailState.completed = Array.isArray(trailState.completed) ? trailState.completed : []
+		    trailState.active = Array.isArray(trailState.active) ? trailState.active : []
+		    trailState.lastOrbitCount = typeof trailState.lastOrbitCount === 'number' ? trailState.lastOrbitCount : currentOrbitCount
+		    const currentColor = body.color || [200, 200, 200]
+		    const currentLineWidth = Math.max(1, Math.min(3, (body.radius || 1) * 0.12))
+		    const bodyCanDrawTrail = body.draw_line !== false
+
 		    if (updateHistory) {
-		      if (body.draw_line !== false) {
-		        history.push(point)
-		        while (history.length > maxTrailPoints) {
-		          history.shift()
-		        }
-		        canvasState.trails[bodyKey] = history
+		      if (!bodyCanDrawTrail) {
+		        trailState.completed = []
+		        trailState.active = [point]
+		        trailState.lastOrbitCount = currentOrbitCount
 		      } else {
-		        canvasState.trails[bodyKey] = [point]
+		        if (currentOrbitCount > trailState.lastOrbitCount) {
+		          trailState.completed = trailState.active.length > 1 ? trailState.active.slice() : []
+		          trailState.active = []
+		          trailState.lastOrbitCount = currentOrbitCount
+		        }
+		        trailState.active.push(point)
+		        if (trailState.active.length > maxTrailPoints) {
+		          trailState.active = trailState.active.slice(-maxTrailPoints)
+		        }
 		      }
+		      canvasState.trails[bodyKey] = trailState
 		    }
 
-		    if (history.length > 1) {
-		      for (let i = 1; i < history.length; i += 1) {
-		        const progress = i / Math.max(1, history.length - 1)
-		        const alpha = clamp(trailFadeAlpha + (0.65 * progress), 0.08, 0.85)
-		        trailCtx.beginPath()
-		        trailCtx.moveTo(history[i - 1].x, history[i - 1].y)
-		        trailCtx.lineTo(history[i].x, history[i].y)
-		        trailCtx.strokeStyle = `rgba(${body.color[0]}, ${body.color[1]}, ${body.color[2]}, ${alpha})`
-		        trailCtx.lineWidth = Math.max(1, Math.min(3, (body.radius || 1) * 0.12))
-		        trailCtx.stroke()
-		      }
+		    if (trailState.completed.length > 0) {
+		      drawTrailPoints(trailState.completed, 0.78, [184, 184, 184], currentLineWidth, 0.24, true)
 		    }
+		    drawTrailPoints(trailState.active, 1.0, currentColor, currentLineWidth, 0.1, false)
 		  }
 		  trailCtx.restore()
 
@@ -317,6 +353,46 @@ def _build_hud_rows(bodies):
 
 		return f"{distance / 1000:,.0f} km from {parent.name}"
 
+	def _orbit_minmax_rows(body, parent):
+		if getattr(body, "static_body", False):
+			return []
+
+		measured_min = getattr(body, "orbit_min_distance", None)
+		measured_max = getattr(body, "orbit_max_distance", None)
+		measured_mean = getattr(body, "orbit_delta_mean", None)
+		ref_min = getattr(body, "perihelion", None) or getattr(body, "perigee", None) or getattr(body, "average_distance", None)
+		ref_max = getattr(body, "aphelion", None) or getattr(body, "apogee", None) or getattr(body, "average_distance", None)
+		if ref_min is None and ref_max is None and measured_min is None and measured_max is None:
+			return []
+
+		rows = []
+		if ref_min is not None:
+			parts = []
+			if getattr(parent, "is_sun", False):
+				parts.append(f"min: {ref_min/1000:,.0f} km ({ref_min/constants.AU:.2f} AU)")
+			else:
+				parts.append(f"min: {ref_min/1000:,.0f} km")
+			if measured_min is not None and ref_min:
+				delta_min = ((measured_min - ref_min) / ref_min) * 100.0
+				parts.append(f"Δmin: {delta_min:+.2f}%")
+			if measured_mean is not None and ref_min:
+				parts.append(f"Δmean: {(measured_mean / ref_min) * 100.0:.2f}%")
+			rows.append(" | ".join(parts))
+		if ref_max is not None:
+			parts = []
+			if getattr(parent, "is_sun", False):
+				parts.append(f"max: {ref_max/1000:,.0f} km ({ref_max/constants.AU:.2f} AU)")
+			else:
+				parts.append(f"max: {ref_max/1000:,.0f} km")
+			if measured_max is not None and ref_max:
+				delta_max = ((measured_max - ref_max) / ref_max) * 100.0
+				parts.append(f"Δmax: {delta_max:+.2f}%")
+			if measured_mean is not None and ref_max:
+				parts.append(f"Δmean: {(measured_mean / ref_max) * 100.0:.2f}%")
+			rows.append(" | ".join(parts))
+
+		return rows
+
 	def _row_text(body, parent, depth):
 		prefix = "- " if depth > 0 else ""
 		if getattr(body, "static_body", False):
@@ -402,38 +478,13 @@ def _build_hud_rows(bodies):
 			"indent": 10 + (depth * 20),
 			"color": _rgb(getattr(body, "color", constants.COLOR_TEXT), constants.COLOR_TEXT),
 		})
-		# add min/max as a subrow if available (skip stationary bodies)
-		if not getattr(body, "static_body", False):
-			min_d = getattr(body, "perihelion", None) or getattr(body, "perigee", None) or getattr(body, "average_distance", None)
-			max_d = getattr(body, "aphelion", None) or getattr(body, "apogee", None) or getattr(body, "average_distance", None)
-			if min_d is None or max_d is None:
-				const_entry = None
-				try:
-					const_entry = constants.BODIES_DATA.get(getattr(body, "name", ""), None) or (constants.MOON_DATA if getattr(body, "name", "") == "Moon" else None)
-				except Exception:
-					const_entry = None
-				if const_entry:
-					if min_d is None:
-						min_d = const_entry.get("perihelion") or const_entry.get("perigee") or const_entry.get("average_distance")
-					if max_d is None:
-						max_d = const_entry.get("aphelion") or const_entry.get("apogee") or const_entry.get("average_distance")
-			parts = []
-			if min_d is not None:
-				if getattr(parent, "is_sun", False):
-					parts.append(f"min: {min_d/1000:,.0f} km ({min_d/constants.AU:.2f} AU)")
-				else:
-					parts.append(f"min: {min_d/1000:,.0f} km")
-			if max_d is not None:
-				if getattr(parent, "is_sun", False):
-					parts.append(f"max: {max_d/1000:,.0f} km ({max_d/constants.AU:.2f} AU)")
-				else:
-					parts.append(f"max: {max_d/1000:,.0f} km")
-			if parts:
-				rows.append({
-					"text": " ".join(parts),
-					"indent": 10 + ((depth + 1) * 20),
-					"color": _rgb(getattr(constants, "COLOR_HUD_TEXT", constants.COLOR_TEXT)),
-				})
+		# add measured orbit extrema as a subrow if available (skip stationary bodies)
+		for minmax_row in _orbit_minmax_rows(body, parent):
+			rows.append({
+				"text": minmax_row,
+				"indent": 10 + ((depth + 1) * 20),
+				"color": _rgb(getattr(constants, "COLOR_HUD_TEXT", constants.COLOR_TEXT)),
+			})
 		for child in children_map.get(body, []):
 			_walk(child, body, depth + 1)
 
@@ -464,8 +515,10 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 			"radius": float(max(1, int(getattr(body, "radius", 1)))),
 			"color": _rgb(getattr(body, "color", (0, 0, 0))),
 			"draw_line": bool(getattr(body, "draw_line", True)),
-			"flash": int(getattr(body, "orbit_complete_flash", 0)),
 			"orbit_count": int(getattr(body, "orbit_count", 0)),
+			"orbit_min_distance": getattr(body, "orbit_min_distance", None),
+			"orbit_max_distance": getattr(body, "orbit_max_distance", None),
+			"orbit_delta_mean": getattr(body, "orbit_delta_mean", None),
 		}
 
 	years = int(state.get("total_elapsed_time", 0.0) // (365.25 * 24 * 3600))
@@ -476,7 +529,12 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	au_per_pixel = meters_per_pixel / constants.AU if distance_scale else 0
 	scale_text = f"Scale: {meters_per_pixel:.2e} m/px | {au_per_pixel:.2e} AU/px"
 	frame_period = int(state.get("frame_period", 80))
-	speed_text = f"Speed: {frame_period} ms/frame ({1000.0 / max(1, frame_period):.1f} FPS)"
+	simulation_timestep = float(state.get("simulation_timestep", constants.TIMESTEP))
+	render_stride = max(1, int(state.get("render_stride", 1)))
+	if render_stride > 1:
+		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame | Render x{render_stride}"
+	else:
+		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame"
 
 	return {
 		"reset": bool(reset),
@@ -486,6 +544,7 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		"canvas_width": canvas_width,
 		"canvas_height": canvas_height,
 		"distance_scale": distance_scale,
+		"simulation_timestep": simulation_timestep,
 		"offset_x": offset_x,
 		"offset_y": offset_y,
 		"time_text": time_text,
@@ -493,7 +552,10 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		"scale_text": scale_text,
         
 		"max_trail_points": 1800,
-		"trail_fade_alpha": 0.08,
+		"max_completed_orbit_trails": int(state.get("max_completed_orbit_trails", 3)),
+		"min_orbits_before_prune": int(state.get("min_orbits_before_prune", 1)),
+		"trail_sample_spacing_px": float(state.get("trail_sample_spacing_px", 2.5)),
+		"trail_fade_alpha": 0.028,
 		"hud_rows": _build_hud_rows(bodies),
 		"bodies": [_body_payload(body) for body in bodies],
 	}

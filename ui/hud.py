@@ -65,6 +65,13 @@ def render_hud(screen, bodies, state):
             else:
                 parts.append(f"max: {max_d/1000:,.0f} km")
 
+        measured_mean = getattr(body, "orbit_delta_mean", None)
+        if measured_mean is not None:
+            reference = min_d if min_d is not None else max_d
+            if reference:
+                percent = (measured_mean / reference) * 100.0
+                parts.append(f"Δmean: {percent:.2f}%")
+
         return " | " + " ".join(parts)
 
     def _render_row(body, parent, depth):

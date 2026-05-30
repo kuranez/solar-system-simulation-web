@@ -18,7 +18,7 @@ WIDTH, HEIGHT = 1920, 1080
 COLOR_TEXT = (255, 255, 255) # Pure white for text
 COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
 COLOR_BACKGROUND = (15, 22, 36) # Match the app's CSS background tone
-# FONT_1 = pygame.font.SysFont("monospace", 16)
+FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General
 AU = 149.6e9  # Astronomical Unit in meters

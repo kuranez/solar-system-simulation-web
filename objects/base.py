@@ -37,13 +37,20 @@ class Body:
 		self.orbit_count = 0
 		self.orbit_start_index = 0
 		self.last_complete_orbit = []
+		self.orbit_min_distance = None
+		self.orbit_max_distance = None
+		self.orbit_delta_min = None
+		self.orbit_delta_max = None
+		self.orbit_delta_mean = None
+		self.orbit_current_min_distance = None
+		self.orbit_current_max_distance = None
+		self.orbit_record_step = 1
+		self.orbit_record_counter = 0
 		self.orbit_detected = False
 		self.orbit_last_angle = None
 		self.orbit_angle_accumulator = 0.0
 		self.orbit_samples_since_completion = 0
 		self.orbit_completion_cooldown = 0
-		# Transient HUD flash timer (frames) set when an orbit completes
-		# self.orbit_complete_flash = 0
 		self.prev_x = x
 		self.prev_y = y
 		self.x_vel = 0.0
@@ -71,12 +78,49 @@ class Body:
 	def attraction(self, other):
 		return physics.attraction(self, other)
 
-	def update_position(self, current_solarsystem):
-		physics.advance_body(self, current_solarsystem)
+	def update_position(self, current_solarsystem, timestep=None, frame_timestep=None):
+		physics.advance_body(self, current_solarsystem, timestep=timestep, frame_timestep=frame_timestep)
 
-		# Decrement any transient HUD flash timer (presentations/rendering run per-frame)
-		# if getattr(self, "orbit_complete_flash", 0) > 0:
-		#     self.orbit_complete_flash -= 1
+	def record_orbit_point(self, point, frame_timestep=None):
+		px, py = point
+		radius = math.sqrt((px * px) + (py * py))
+		if self.orbit_current_min_distance is None or radius < self.orbit_current_min_distance:
+			self.orbit_current_min_distance = radius
+		if self.orbit_current_max_distance is None or radius > self.orbit_current_max_distance:
+			self.orbit_current_max_distance = radius
+
+		adaptive_step = self._orbit_record_step_for_radius(radius, frame_timestep=frame_timestep)
+		base_step = max(1, int(getattr(self, 'orbit_record_step', 1)))
+		effective_step = max(1, base_step * adaptive_step)
+		self.orbit_record_counter += 1
+		if not self.orbit or self.orbit_record_counter >= effective_step:
+			self.orbit.append(point)
+			self.orbit_record_counter = 0
+			if len(self.orbit) > 12000:
+				self.orbit.pop(0)
+
+	def _orbit_record_step_for_radius(self, radius, frame_timestep=None):
+		"""Return a sampling step that keeps inner orbits denser than outer ones."""
+		if radius <= 0:
+			return 1
+
+		central_mass = None
+		parent = getattr(self, "parent_body", None)
+		if parent is not None:
+			central_mass = getattr(parent, "mass", None)
+		elif getattr(constants, "BODIES_DATA", None):
+			sun_data = constants.BODIES_DATA.get("Sun", {})
+			central_mass = sun_data.get("mass")
+		if not central_mass:
+			return 1
+
+		period_seconds = 2.0 * math.pi * math.sqrt((radius ** 3) / (constants.G * central_mass))
+		period_days = period_seconds / 86400.0
+		timestep_days = max(1e-6, (frame_timestep or constants.TIMESTEP) / 86400.0)
+		frames_per_orbit = max(1.0, period_days / timestep_days)
+		target_samples_per_orbit = 180.0
+		step = int(round(frames_per_orbit / target_samples_per_orbit))
+		return max(1, min(12, step))
 
 	def _check_orbit_completion(self, current_solarsystem=None):
 		# Compute current point in the same reference frame used when recording orbit points
@@ -123,19 +167,37 @@ class Body:
 		):
 			self.orbit_count += 1
 			self.orbit_detected = True
+			self.orbit_min_distance = self.orbit_current_min_distance
+			self.orbit_max_distance = self.orbit_current_max_distance
+			ref_min = getattr(self, 'perihelion', None) or getattr(self, 'perigee', None) or getattr(self, 'average_distance', None)
+			ref_max = getattr(self, 'aphelion', None) or getattr(self, 'apogee', None) or getattr(self, 'average_distance', None)
+			if ref_min is not None and self.orbit_min_distance is not None:
+				self.orbit_delta_min = self.orbit_min_distance - ref_min
+			else:
+				self.orbit_delta_min = None
+			if ref_max is not None and self.orbit_max_distance is not None:
+				self.orbit_delta_max = self.orbit_max_distance - ref_max
+			else:
+				self.orbit_delta_max = None
+			if self.orbit_delta_min is not None and self.orbit_delta_max is not None:
+				self.orbit_delta_mean = (abs(self.orbit_delta_min) + abs(self.orbit_delta_max)) / 2.0
+			elif self.orbit_delta_min is not None:
+				self.orbit_delta_mean = abs(self.orbit_delta_min)
+			elif self.orbit_delta_max is not None:
+				self.orbit_delta_mean = abs(self.orbit_delta_max)
+			else:
+				self.orbit_delta_mean = None
+			self.orbit_current_min_distance = None
+			self.orbit_current_max_distance = None
 			self.last_complete_orbit = list(self.orbit)
 			if self.last_complete_orbit:
 				self.last_complete_orbit.append(self.last_complete_orbit[0])
 			self.orbit = [current_point]
+			self.orbit_record_counter = 0
 			self.orbit_start_index = 0
 			self.orbit_angle_accumulator = 0.0
 			self.orbit_samples_since_completion = 0
 			self.orbit_completion_cooldown = 12
-			try:
-				# self.orbit_complete_flash = 180
-				pass
-			except Exception:
-				pass
 
 		if self.orbit_detected and self.orbit_completion_cooldown > 0:
 			self.orbit_completion_cooldown -= 1

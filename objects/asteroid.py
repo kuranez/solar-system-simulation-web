@@ -11,13 +11,14 @@ class Asteroid(Body):
 		super().__init__(x, y, radius, mass, name=name, color=color)
 		self.draw_line = False
 
-	def update_position(self, current_solarsystem):
+	def update_position(self, current_solarsystem, timestep=None, frame_timestep=None):
 		sun = current_solarsystem[0]
 		fx, fy = self.attraction(sun)
-		self.x_vel += fx / self.mass * self.TIMESTEP
-		self.y_vel += fy / self.mass * self.TIMESTEP
-		self.x += self.x_vel * self.TIMESTEP
-		self.y += self.y_vel * self.TIMESTEP
+		step_dt = timestep if timestep is not None else self.TIMESTEP
+		self.x_vel += fx / self.mass * step_dt
+		self.y_vel += fy / self.mass * step_dt
+		self.x += self.x_vel * step_dt
+		self.y += self.y_vel * step_dt
 
 	def draw(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		x, y = self._screen_position(distance_scale, screen_offset_x, screen_offset_y)

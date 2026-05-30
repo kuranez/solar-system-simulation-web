@@ -27,12 +27,13 @@ classDiagram
         +int orbit_count
         +int orbit_start_index
         +list last_complete_orbit
+        +float orbit_min_distance
+        +float orbit_max_distance
         +bool orbit_detected
         +float orbit_last_angle
         +float orbit_angle_accumulator
         +int orbit_samples_since_completion
         +int orbit_completion_cooldown
-        +int orbit_complete_flash
         +float prev_x, prev_y
         +float x_vel, y_vel
         +bool draw_line
@@ -51,8 +52,6 @@ classDiagram
 
     class Planet {
         +bool is_inner_planet
-        +int flash_timer
-        +int flash_duration
         +update_position(current_solarsystem)  "overrides Body"
         +draw(surface, distance_scale, ...)  "overrides Body"
     }
@@ -91,6 +90,6 @@ classDiagram
     }
 
     PhysicsModule --> Body : "advance_body / attraction / distance updates"
-    Body --> HUD : "orbit_count / orbit_complete_flash used for display"
+    Body --> HUD : "orbit_count / orbit_min_distance / orbit_max_distance used for display"
 ```
 ```
