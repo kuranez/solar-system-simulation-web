@@ -39,7 +39,7 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
 from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -68,7 +68,7 @@ SIMULATION_VIEWS = {
         "generator": create_earth_moon_system,
         "base_scale": 350 / constants.MOON_DATA["average_distance"],
         "scale_mode": "distance",
-        "zoom_updater": None,
+        "zoom_updater": update_simple_earth_moon,
     },
     "[Simple] Sun, Earth, and Moon System": {
         "title": "Sun, Earth, and Moon System",

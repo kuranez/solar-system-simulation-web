@@ -148,12 +148,17 @@ def update_simple_sun_earth(bodies, state, scale, view_cfg):
 
 
 def update_simple_earth_moon(bodies, state, scale, view_cfg):
-    update_static_scene_scaling(
-        bodies,
-        state,
-        scale,
-        scaled_body_names=("Earth", "Moon"),
-    )
+    """Zoom updater for the simple Earth-Moon preset.
+
+    Positions are already driven by physics in meters, so zooming only needs to
+    update the distance scale and scale the visible radii from their original
+    pixel sizes.
+    """
+    state["distance_scale"] = state["base_distance_scale"] * scale
+
+    for body in bodies:
+        if hasattr(body, "original_radius"):
+            body.radius = max(1, int(body.original_radius * scale))
 
 def update_body_radii(current_solarsystem, distance_scale):
     """Updates the radius of each body based on the current distance scale."""

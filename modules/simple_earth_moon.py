@@ -19,6 +19,7 @@ def create_earth_moon_system():
     )
     earth.static_body = True
     earth.draw_line = False
+    earth.original_radius = EARTH_RADIUS_PX
 
     moon_distance = constants.MOON_DATA["average_distance"]
     moon = Body(
@@ -34,6 +35,7 @@ def create_earth_moon_system():
     moon.child_of = earth
     moon.parent_body = earth
     earth.children.append(moon)
+    moon.original_radius = MOON_RADIUS_PX
 
     moon.y_vel = constants.MOON_DATA["orbital_velocity"]
     
