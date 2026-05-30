@@ -191,6 +191,7 @@ def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
     if not state['is_playing']:
         state['is_playing'] = True
         play_button.name = "Pause"
+        play_button.icon = "player-pause"
         play_button.button_type = "danger"
         # Start periodic updates (e.g., 20 FPS)
         state['callback'] = pn.state.add_periodic_callback(
@@ -200,6 +201,7 @@ def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
     else:
         state['is_playing'] = False
         play_button.name = "Play"
+        play_button.icon = "player-play"
         play_button.button_type = "success"
         if state['callback']:
             state['callback'].stop()

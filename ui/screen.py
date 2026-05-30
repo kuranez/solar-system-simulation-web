@@ -40,12 +40,11 @@ def draw_frame(screen, bodies, state, color_bg=constants.COLOR_BACKGROUND):
 # Function to convert Pygame surface to PNG buffer for Panel display
 def pygame_surface_to_PNGbuf(surface):
     """Converts a Pygame surface to a PNG buffer for Panel display."""
-    arr = pygame.surfarray.array3d(surface)
-    arr = np.transpose(arr, (1, 0, 2))  # Pygame (w,h,3) -> (h,w,3)
-    img = Image.fromarray(arr)
+    raw_pixels = pygame.image.tostring(surface, "RGB", False)
+    img = Image.frombytes("RGB", surface.get_size(), raw_pixels)
 
     buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
+    img.save(buffer, format="PNG", compress_level=1)
     return buffer.getvalue()
 
 

@@ -200,6 +200,13 @@ class Body:
 		if len(orbit_points) < 2:
 			return
 
+		max_segments = 1400
+		if len(orbit_points) > max_segments:
+			step = max(1, len(orbit_points) // max_segments)
+			orbit_points = orbit_points[::step]
+			if len(orbit_points) < 2:
+				return
+
 		# If an alpha < 255 is requested, draw onto a temporary SRCALPHA surface
 		target_surface = display_surface
 		temp_surf = None

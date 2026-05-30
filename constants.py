@@ -17,7 +17,7 @@ pygame.font.init()
 WIDTH, HEIGHT = 1920, 1080
 COLOR_TEXT = (255, 255, 255) # Pure white for text
 COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
-COLOR_BACKGROUND = (43, 48, 54) # Dark background for better contrast
+COLOR_BACKGROUND = (15, 22, 36) # Match the app's CSS background tone
 FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General

@@ -26,8 +26,6 @@ from PIL import Image # For image processing and conversion between Pygame surfa
 import pygame # For off-screen rendering of the solar system simulation
 
 import panel as pn # For building the web interface
-from panel.template import FastListTemplate
-from panel.theme import DarkTheme
 
 # Importing from the simulation package
 import constants # For simulation constants like scale and colors
@@ -38,13 +36,13 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 
 
 # Importing UI handlers and CSS
-from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
+from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
 from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
 from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
-pn.extension(raw_css=[GLOBAL_THEME_CSS])
+pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
 # pn.extension() 
 
 # Pygame initialization (off-screen)
@@ -127,14 +125,16 @@ view_select = pn.widgets.Select(
     label="Select Simulation", 
     options=list(SIMULATION_VIEWS.keys()),
     value=initial_view_name, # Set the default value
-    width=450,
+    width=270,
+    margin=0,
     stylesheets=[CUSTOM_SELECT_CSS]
 )
 
 # Buttons for controling the simulation
-step_button = pn.widgets.Button(name="Next Frame", button_type="primary", width=150, css_classes=["big-button"])
-play_button = pn.widgets.Button(name="Play", button_type="success", width=150, css_classes=["big-button"])
-reset_button = pn.widgets.Button(name="Reset", button_type="warning", width=150, css_classes=["big-button"])
+button_stylesheets = [BUTTON_CSS]
+step_button = pn.widgets.Button(name="Next Frame", icon="player-step-forward", button_type="primary", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="success", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
@@ -146,13 +146,15 @@ zoom_slider = pn.widgets.FloatSlider(
     step=0.05, 
     value=1.0,   # Start at base view scale
     format="0.0%",  # Display as percentage
+    width=270,
+    margin=0,
     stylesheets=[CUSTOM_SLIDER_CSS],
 )
 
 # Initial render of the simulation frame
 draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
 img_bytes = pygame_surface_to_PNGbuf(screen)
-img_pane = pn.pane.PNG(img_bytes, width=width, height=height, align="center")
+img_pane = pn.pane.PNG(img_bytes, width=None, height=None, sizing_mode="stretch_both", margin=0, align="center", css_classes=["app-viewer"])
 
 # Callback functions
 def update_view(event):
@@ -203,29 +205,13 @@ play_button.on_click(lambda event: play_pause(event, state, screen, current_sola
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row (play_button, step_button, zoom_slider, view_select, align="center")
-app = pn.Column(controls, img_pane, align="center")
-
-# Use HSpacer to center the content
-centered_layout = pn.Row(pn.layout.HSpacer(), app, pn.layout.HSpacer())
-
-template = FastListTemplate(
-    title= "Solar System Simulation",
-    theme=DarkTheme,
-    header_background="#422C71",
-    sidebar_width=0,
-    theme_toggle=False,
-    # favicon="path/to/your/icon.png"  # Replace with the actual path to your icon
-)
-if template.main is not None:
-    template.main.append(centered_layout)
+controls = pn.Row(play_button, step_button, zoom_slider, view_select, align="center", sizing_mode="fixed", width=920, height=60, margin=0, css_classes=["app-controls"])
+app = pn.Column(controls, img_pane, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
 
 
 if __name__ == "__main__":
-    # Make the template servable and launch it in a browser
-    template.servable()
     serve_port = choose_serve_port(int(os.environ.get("PORT", "5000")))
     if serve_port == 0:
         print("Port 5000 is busy; starting Panel on a free port instead.")
 
-    pn.serve(template, port=serve_port, show=True)
+    pn.serve(app, port=serve_port, show=True)
