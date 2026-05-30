@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import math
-
 import pygame
 
 import constants
+from simulation import physics
 
 
 class Body:
@@ -17,6 +17,8 @@ class Body:
 	def __init__(self, x, y, radius, mass, name="Body", color=(0, 0, 0), is_sun=False):
 		self.x = x
 		self.y = y
+		self.original_x = x
+		self.original_y = y
 		self.radius = radius
 		self.original_radius = radius
 		self.mass = mass
@@ -33,6 +35,17 @@ class Body:
 		self.orbit = []
 		# Track orbit completions when available (planets set/use this)
 		self.orbit_count = 0
+		self.orbit_start_index = 0
+		self.last_complete_orbit = []
+		self.orbit_detected = False
+		self.orbit_last_angle = None
+		self.orbit_angle_accumulator = 0.0
+		self.orbit_samples_since_completion = 0
+		self.orbit_completion_cooldown = 0
+		# Transient HUD flash timer (frames) set when an orbit completes
+		self.orbit_complete_flash = 0
+		self.prev_x = x
+		self.prev_y = y
 		self.x_vel = 0.0
 		self.y_vel = 0.0
 		self.draw_line = True
@@ -40,60 +53,80 @@ class Body:
 		self.children = []
 
 	def update_distance_to_sun(self, sun):
-		if not self.is_sun:
-			distance_x = sun.x - self.x
-			distance_y = sun.y - self.y
-			self.distance_to_sun = math.sqrt(distance_x**2 + distance_y**2)
+		physics.update_distance_to_sun(self, sun)
 
 	def attraction(self, other):
-		dx, dy = other.x, other.y
-		distance_x = dx - self.x
-		distance_y = dy - self.y
-		distance = math.sqrt(distance_x**2 + distance_y**2)
-
-		if distance == 0:
-			return 0.0, 0.0
-
-		force = self.G * self.mass * other.mass / distance**2
-		theta = math.atan2(distance_y, distance_x)
-		fx = math.cos(theta) * force
-		fy = math.sin(theta) * force
-
-		return fx, fy
+		return physics.attraction(self, other)
 
 	def update_position(self, current_solarsystem):
-		if getattr(self, "static_body", False):
+		physics.advance_body(self, current_solarsystem)
+
+		# Decrement any transient HUD flash timer (presentations/rendering run per-frame)
+		if getattr(self, "orbit_complete_flash", 0) > 0:
+			self.orbit_complete_flash -= 1
+
+	def _check_orbit_completion(self, current_solarsystem=None):
+		# Compute current point in the same reference frame used when recording orbit points
+		parent_body = getattr(self, "parent_body", None)
+		if parent_body is not None:
+			ref_x = parent_body.x
+			ref_y = parent_body.y
+		else:
+			# Try to find the system sun if available
+			ref = None
+			if current_solarsystem is not None:
+				from simulation.physics import find_sun
+				ref = find_sun(current_solarsystem)
+			if ref is not None:
+				ref_x = ref.x
+				ref_y = ref.y
+			else:
+				ref_x = 0
+				ref_y = 0
+
+		current_point = (self.x - ref_x, self.y - ref_y)
+
+		current_angle = math.atan2(current_point[1], current_point[0])
+		if self.orbit_last_angle is None:
+			self.orbit_last_angle = current_angle
 			return
 
-		total_fx = 0
-		total_fy = 0
+		# Unwrap the angular delta into [-pi, pi] so the accumulator behaves smoothly.
+		angle_delta = current_angle - self.orbit_last_angle
+		if angle_delta > math.pi:
+			angle_delta -= 2 * math.pi
+		elif angle_delta < -math.pi:
+			angle_delta += 2 * math.pi
 
-		sun = None
-		for body in current_solarsystem:
-			if getattr(body, "is_sun", False) or getattr(body, "sun", False):
-				sun = body
-				break
+		self.orbit_angle_accumulator += angle_delta
+		self.orbit_last_angle = current_angle
+		self.orbit_samples_since_completion += 1
 
-		if sun is not None:
-			self.update_distance_to_sun(sun)
+		# Count one full revolution once the unwrapped angle reaches 2π.
+		if (
+			not self.orbit_detected
+			and self.orbit_samples_since_completion > 12
+			and abs(self.orbit_angle_accumulator) >= 2 * math.pi
+		):
+			self.orbit_count += 1
+			self.orbit_detected = True
+			self.last_complete_orbit = list(self.orbit)
+			if self.last_complete_orbit:
+				self.last_complete_orbit.append(self.last_complete_orbit[0])
+			self.orbit = [current_point]
+			self.orbit_start_index = 0
+			self.orbit_angle_accumulator = 0.0
+			self.orbit_samples_since_completion = 0
+			self.orbit_completion_cooldown = 12
+			try:
+				self.orbit_complete_flash = 180
+			except Exception:
+				pass
 
-		for body in current_solarsystem:
-			if self == body:
-				continue
-
-			fx, fy = self.attraction(body)
-			total_fx += fx
-			total_fy += fy
-
-		self.x_vel += total_fx / self.mass * self.TIMESTEP
-		self.y_vel += total_fy / self.mass * self.TIMESTEP
-
-		self.x += self.x_vel * self.TIMESTEP
-		self.y += self.y_vel * self.TIMESTEP
-
-		self.orbit.append((self.x, self.y))
-		if len(self.orbit) > 20000:
-			self.orbit.pop(0)
+		if self.orbit_detected and self.orbit_completion_cooldown > 0:
+			self.orbit_completion_cooldown -= 1
+			if self.orbit_completion_cooldown <= 0:
+				self.orbit_detected = False
 
 	def _screen_position(self, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		x = self.x * distance_scale + screen_offset_x
@@ -109,11 +142,22 @@ class Body:
 			for px, py in self.orbit
 		]
 
-	def _draw_orbit_trail(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0, fade_scale=1.5):
-		if not self.draw_line or len(self.orbit) < 2:
+	def _complete_orbit_points(self, distance_scale, screen_offset_x=0, screen_offset_y=0):
+		points = []
+		if self.last_complete_orbit:
+			points.extend(
+				(
+					px * distance_scale + screen_offset_x,
+					py * distance_scale + screen_offset_y,
+				)
+				for px, py in self.last_complete_orbit
+			)
+		return points
+
+	def _draw_point_trail(self, display_surface, orbit_points, fade_scale=1.5):
+		if len(orbit_points) < 2:
 			return
 
-		orbit_points = self._orbit_points(distance_scale, screen_offset_x, screen_offset_y)
 		for i in range(1, len(orbit_points)):
 			distance = len(orbit_points) - i
 			fade_factor = max(0, min(255, int(255 * (distance / len(orbit_points)) * fade_scale)))
@@ -123,6 +167,16 @@ class Body:
 				int(self.color[2] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[2] * (fade_factor / 255)),
 			)
 			pygame.draw.line(display_surface, faded_color, orbit_points[i - 1], orbit_points[i], 1)
+
+	def _draw_orbit_trail(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0, fade_scale=1.0, completed_fade_scale=0.7):
+		if not self.draw_line:
+			return
+
+		completed_points = self._complete_orbit_points(distance_scale, screen_offset_x, screen_offset_y)
+		self._draw_point_trail(display_surface, completed_points, completed_fade_scale)
+
+		current_points = self._orbit_points(distance_scale, screen_offset_x, screen_offset_y)
+		self._draw_point_trail(display_surface, current_points, fade_scale)
 
 	def draw(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		x, y = self._screen_position(distance_scale, screen_offset_x, screen_offset_y)

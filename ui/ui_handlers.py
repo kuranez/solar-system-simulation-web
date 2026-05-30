@@ -1,4 +1,4 @@
-"""" ui/ui_handlers.py 
+""" ui/ui_handlers.py 
 
     # Method overview:
 
@@ -60,16 +60,48 @@ def update_proportional_sun_earth_moon(bodies, state, scale, view_cfg):
     sun_earth_px = view_cfg["sun_earth_base_px"] * scale
     earth_moon_px = sun_earth_px * view_cfg["earth_moon_ratio"]
 
-    earth_radius = max(1, int(constants.BASE_SIZE * scale))
-    moon_radius = max(1, int(earth_radius / earth_radius_ratio))
-
-    earth.x = sun_earth_px
-    earth.radius = earth_radius
+    earth.x = earth.original_x * scale
+    earth.radius = max(1, int(earth.original_radius * scale))
 
     moon.x = earth.x + earth_moon_px
-    moon.radius = moon_radius
+    moon.radius = max(1, int(moon.original_radius * scale))
 
     state["distance_scale"] = 1.0
+
+
+def update_static_scene_scaling(bodies, state, scale, scaled_body_names, fixed_body_names=()):
+    """Scale preset scenes from their original positions and radii."""
+    fixed_body_names = set(fixed_body_names)
+    scaled_body_names = set(scaled_body_names)
+
+    for body in bodies:
+        if hasattr(body, "original_x") and body.name not in fixed_body_names:
+            body.x = body.original_x * scale
+            body.y = body.original_y * scale
+
+        if hasattr(body, "original_radius") and body.name in scaled_body_names:
+            body.radius = max(1, int(body.original_radius * scale))
+
+    state["distance_scale"] = 1.0
+
+
+def update_simple_sun_earth(bodies, state, scale, view_cfg):
+    update_static_scene_scaling(
+        bodies,
+        state,
+        scale,
+        scaled_body_names=("Earth",),
+        fixed_body_names=("Sun",),
+    )
+
+
+def update_simple_earth_moon(bodies, state, scale, view_cfg):
+    update_static_scene_scaling(
+        bodies,
+        state,
+        scale,
+        scaled_body_names=("Earth", "Moon"),
+    )
 
 def update_body_radii(current_solarsystem, distance_scale):
     """Updates the radius of each body based on the current distance scale."""
@@ -92,6 +124,18 @@ def update_body_radii(current_solarsystem, distance_scale):
                 1,
                 int(scaled_sizes[body.name])
             )
+
+
+def apply_zoom_for_view(current_solarsystem, state, scale, view_cfg):
+    """Apply the active view's zoom behavior and redraw state."""
+    updater = view_cfg.get("zoom_updater")
+    mode = view_cfg.get("scale_mode", "distance")
+
+    if updater is not None:
+        updater(current_solarsystem, state, scale, view_cfg)
+    elif mode == "distance":
+        state["distance_scale"] = state["base_distance_scale"] * scale
+        update_body_radii(current_solarsystem, state["distance_scale"])
 
 # Event handlers for UI buttons
 def on_step(event, screen, bodies, state, color_bg, img_pane):
@@ -134,7 +178,7 @@ def zoom_in(event, state, current_solarsystem, screen, color_bg, img_pane):
     
     # Recalculate planet sizes and redraw the frame
     update_body_radii(current_solarsystem, state['distance_scale'])
-    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    draw_frame(screen, current_solarsystem, state, color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)
 
 def zoom_out(event, state, current_solarsystem, screen, color_bg, img_pane):
@@ -146,5 +190,5 @@ def zoom_out(event, state, current_solarsystem, screen, color_bg, img_pane):
 
     # Recalculate planet sizes and redraw the frame
     update_body_radii(current_solarsystem, state['distance_scale'])
-    draw_frame(screen, current_solarsystem, state['distance_scale'], state['offset_x'], state['offset_y'], color_bg)
+    draw_frame(screen, current_solarsystem, state, color_bg)
     img_pane.object = pygame_surface_to_PNGbuf(screen)

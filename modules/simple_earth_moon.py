@@ -1,11 +1,9 @@
-"""Create a simple stationary Earth-Moon system."""
+"""Create a simple Earth-Moon system."""
 
 from objects.base import Body
 
 import constants
 
-
-EARTH_MOON_PIXEL_DISTANCE = 350
 EARTH_RADIUS_PX = 18
 MOON_RADIUS_PX = 5
 
@@ -22,18 +20,21 @@ def create_earth_moon_system():
     earth.static_body = True
     earth.draw_line = False
 
+    moon_distance = constants.MOON_DATA["average_distance"]
     moon = Body(
-        EARTH_MOON_PIXEL_DISTANCE,
+        -moon_distance,
         0,
         MOON_RADIUS_PX,
         constants.MOON_DATA["mass"],
         name="Moon",
         color=constants.MOON_DATA["color"],
     )
-    moon.static_body = True
-    moon.draw_line = False
+    moon.static_body = False
+    moon.draw_line = True
     moon.child_of = earth
     moon.parent_body = earth
     earth.children.append(moon)
 
+    moon.y_vel = constants.MOON_DATA["orbital_velocity"]
+    
     return [earth, moon]

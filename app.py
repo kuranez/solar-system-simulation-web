@@ -39,7 +39,7 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
 from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from ui.ui_handlers import advance_simulation, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -58,13 +58,17 @@ SIMULATION_VIEWS = {
         "title": "Simple Sun and Earth System",
         "description": "A simulation of the Sun and Earth system.",
         "generator": create_sun_and_earth_system,
-        "base_scale": 1.0,
+        "base_scale": constants.DEFAULT_SCALE,
+        "zoom_updater": None,
+        "scale_mode": "distance",
     },
     "[Simple] Earth and Moon": {
         "title": "Simple Earth and Moon System",
         "description": "A simulation of the Earth and Moon system.",
         "generator": create_earth_moon_system,
-        "base_scale": 1.0,
+        "base_scale": 350 / constants.MOON_DATA["average_distance"],
+        "scale_mode": "distance",
+        "zoom_updater": None,
     },
     "[Simple] Sun, Earth, and Moon System": {
         "title": "Sun, Earth, and Moon System",
@@ -126,7 +130,7 @@ play_button = pn.widgets.Button(name="Play", button_type="success", width=150, c
 zoom_slider = pn.widgets.FloatSlider(
     label='Zoom & Scale', 
     start=0.05,  # Minimum zoom factor (5%)
-    end=2.5,    # Maximum zoom factor (250%)
+    end=1.50,    # Maximum zoom factor (150%)
     step=0.05, 
     value=1.0,   # Start at base view scale
     format="0.0%",  # Display as percentage
@@ -156,8 +160,7 @@ def update_view(event):
 
     # Apply per-view base scale so each simulation can define its own distance mapping.
     state['base_distance_scale'] = SIMULATION_VIEWS[view_name]['base_scale']
-    state['distance_scale'] = state['base_distance_scale'] * zoom_slider.value
-    update_body_radii(current_solarsystem, state['distance_scale'])
+    apply_zoom_for_view(current_solarsystem, state, zoom_slider.value, SIMULATION_VIEWS[view_name])
     
     # Redraw the scene with the new system
     draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
@@ -168,16 +171,7 @@ view_select.param.watch(update_view, 'value')
 
 def on_zoom_change(event):
     view_cfg = SIMULATION_VIEWS[view_select.value]
-    mode = view_cfg.get("scale_mode", "distance")
-    scale = event.new
-
-    updater = view_cfg.get("zoom_updater")
-
-    if updater is not None:
-        updater(current_solarsystem, state, scale, view_cfg)
-    elif mode == "distance":
-        state["distance_scale"] = state["base_distance_scale"] * scale
-        update_body_radii(current_solarsystem, state["distance_scale"])
+    apply_zoom_for_view(current_solarsystem, state, event.new, view_cfg)
 
     draw_frame(screen, current_solarsystem, state, constants.COLOR_BACKGROUND)
     img_pane.object = pygame_surface_to_PNGbuf(screen)

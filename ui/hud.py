@@ -50,6 +50,21 @@ def render_hud(screen, bodies, state):
 
     y_offset += 20  # Move down for the next line of text
 
+    # Transient notifications: show any bodies that just completed an orbit
+    notifications = []
+    for b in bodies:
+        if getattr(b, "orbit_complete_flash", 0) > 0:
+            notifications.append(f"{b.name} completed an orbit")
+
+    if notifications:
+        # Render notifications in the top-right corner, stacking downward
+        nx = screen.get_width() - 10
+        ny = 10
+        for note in notifications:
+            note_surf = constants.FONT_1.render(note, True, constants.COLOR_TEXT)
+            screen.blit(note_surf, (nx - note_surf.get_width(), ny))
+            ny += 20
+
     # Build mapping parent -> [children]. Prefer the authoritative `parent.children` lists
     children_map = defaultdict(list)
     for b in bodies:
