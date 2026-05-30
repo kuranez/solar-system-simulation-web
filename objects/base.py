@@ -129,29 +129,71 @@ class Body:
 				self.orbit_detected = False
 
 	def _screen_position(self, distance_scale, screen_offset_x=0, screen_offset_y=0):
+		# If a visual override is present (e.g., amplify moon distance), render relative to parent
+		visual_scale = getattr(self, 'visual_distance_scale', None)
+		if visual_scale is not None and getattr(self, 'parent_body', None) is not None:
+			parent = self.parent_body
+			if parent is None:
+				# Fallback to physical mapping if parent unexpectedly missing
+				x = self.x * distance_scale + screen_offset_x
+				y = self.y * distance_scale + screen_offset_y
+				return x, y
+			parent_x = parent.x * distance_scale + screen_offset_x
+			parent_y = parent.y * distance_scale + screen_offset_y
+			rel_x = (self.x - parent.x) * visual_scale
+			rel_y = (self.y - parent.y) * visual_scale
+			return parent_x + rel_x, parent_y + rel_y
+
 		x = self.x * distance_scale + screen_offset_x
 		y = self.y * distance_scale + screen_offset_y
 		return x, y
 
 	def _orbit_points(self, distance_scale, screen_offset_x=0, screen_offset_y=0):
-		return [
-			(
-				px * distance_scale + screen_offset_x,
-				py * distance_scale + screen_offset_y,
-			)
-			for px, py in self.orbit
-		]
+		# Allow a per-body visual override for distance scaling (useful to amplify moon orbit)
+		effective_scale = getattr(self, 'visual_distance_scale', distance_scale)
+		# If orbit points are stored relative to a parent (e.g., moon.rel from Earth),
+		# draw them around the parent's screen position so the trail follows the parent.
+		parent = getattr(self, 'parent_body', None)
+		if parent is not None:
+			parent_x, parent_y = parent._screen_position(distance_scale, screen_offset_x, screen_offset_y)
+			return [
+				(
+					parent_x + px * effective_scale,
+					parent_y + py * effective_scale,
+				)
+				for px, py in self.orbit
+			]
+		else:
+			return [
+				(
+					px * effective_scale + screen_offset_x,
+					py * effective_scale + screen_offset_y,
+				)
+				for px, py in self.orbit
+			]
 
 	def _complete_orbit_points(self, distance_scale, screen_offset_x=0, screen_offset_y=0):
 		points = []
 		if self.last_complete_orbit:
-			points.extend(
-				(
-					px * distance_scale + screen_offset_x,
-					py * distance_scale + screen_offset_y,
+			effective_scale = getattr(self, 'visual_distance_scale', distance_scale)
+			parent = getattr(self, 'parent_body', None)
+			if parent is not None:
+				parent_x, parent_y = parent._screen_position(distance_scale, screen_offset_x, screen_offset_y)
+				points.extend(
+					(
+						parent_x + px * effective_scale,
+						parent_y + py * effective_scale,
+					)
+					for px, py in self.last_complete_orbit
 				)
-				for px, py in self.last_complete_orbit
-			)
+			else:
+				points.extend(
+					(
+						px * effective_scale + screen_offset_x,
+						py * effective_scale + screen_offset_y,
+					)
+					for px, py in self.last_complete_orbit
+				)
 		return points
 
 	def _draw_point_trail(self, display_surface, orbit_points, fade_scale=1.5, color_override=None, alpha=255):
