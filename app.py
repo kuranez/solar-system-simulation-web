@@ -12,7 +12,8 @@
 # Importing system libraries
 import io # For in-memory byte streams
 import sys # For modifying the Python path to include the simulation package
-import os # For handling file paths and directories
+import os
+import socket
 
 # Add directories to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
@@ -31,7 +32,7 @@ from panel.theme import DarkTheme
 # Importing from the simulation package
 import constants # For simulation constants like scale and colors
 from modules.simple_solar_system import create_solar_system
-from modules.simple_sun_and_earth import create_sun_and_earth_system
+from modules.simple_sun_earth import create_sun_earth_system
 from modules.simple_earth_moon import create_earth_moon_system
 from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 
@@ -54,10 +55,10 @@ screen.fill(constants.COLOR_BACKGROUND)  # Fill with background color
 
 # Simulation setup
 SIMULATION_VIEWS = {
-    "[Simple] Sun and Earth": {
+        "[Simple] Sun and Earth": {
         "title": "Simple Sun and Earth System",
         "description": "A simulation of the Sun and Earth system.",
-        "generator": create_sun_and_earth_system,
+        "generator": create_sun_earth_system,
         "base_scale": constants.DEFAULT_SCALE,
         "zoom_updater": None,
         "scale_mode": "distance",
@@ -92,6 +93,16 @@ SIMULATION_VIEWS = {
 
 initial_view_name = "[Simple] Solar System"
 current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
+
+
+def choose_serve_port(preferred_port=5000):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", preferred_port))
+    except OSError:
+        return 0
+
+    return preferred_port
 
 
 # State variables for app
@@ -213,4 +224,8 @@ if template.main is not None:
 if __name__ == "__main__":
     # Make the template servable and launch it in a browser
     template.servable()
-    pn.serve(template, port=5000, show=True)
+    serve_port = choose_serve_port(int(os.environ.get("PORT", "5000")))
+    if serve_port == 0:
+        print("Port 5000 is busy; starting Panel on a free port instead.")
+
+    pn.serve(template, port=serve_port, show=True)
