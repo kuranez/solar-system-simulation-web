@@ -1,66 +1,80 @@
-""" ui/hud.py
+"""ui/hud.py
 
-    # Handles rendering of informational text overlays (HUD)
-    # Displays elapsed simulation time, 
-    # current scale, distances of bodies to the sun, 
-    # orbits count, and other relevant info
-
+Handles rendering of informational text overlays (HUD).
 """
 
-import pygame
-import constants
 from collections import defaultdict
+
+import pygame
+
+import constants
 
 
 def render_hud(screen, bodies, state):
-    """Renders the Heads-Up Display (HUD) with information about the simulation."""
+    """Render the simulation HUD using a generic parent/child hierarchy."""
 
-    y_offset = 0  # Initial vertical offset for text lines
-
+    y_offset = [0]
     sun = next((body for body in bodies if getattr(body, "is_sun", False)), None)
-    earth = next((body for body in bodies if getattr(body, "name", None) == "Earth"), None)
-    moon = next((body for body in bodies if getattr(body, "name", None) == "Moon"), None)
-    earth_moon_only_view = sun is None and earth is not None and moon is not None and len(bodies) == 2
 
     def _distance_between(body_a, body_b):
         return (((body_a.x - body_b.x) ** 2 + (body_a.y - body_b.y) ** 2) ** 0.5)
 
-    # Display the total elapsed simulation time in years and days
-    total_elapsed_time = state["total_elapsed_time"]
+    def _distance_label(body, parent):
+        if parent is None:
+            return "stationary"
 
-    # Format the elapsed time into years and days for better readability
+        distance = _distance_between(body, parent)
+        if getattr(parent, "is_sun", False):
+            return f"{distance / 1000:,.0f} km ({distance / constants.AU:.2f} AU)"
+
+        return f"{distance / 1000:,.0f} km from {parent.name}"
+
+    def _render_row(body, parent, depth):
+        indent = 10 + (depth * 20)
+        prefix = "- " if depth > 0 else ""
+
+        if getattr(body, "static_body", False):
+            text = f"{prefix}{body.name}: stationary"
+        elif parent is None:
+            if getattr(body, "is_sun", False):
+                text = f"{body.name}: stationary"
+            else:
+                distance = _distance_between(body, sun) if sun is not None else getattr(body, "distance_to_sun", 0.0)
+                text = f"{body.name}: {distance / 1000:,.0f} km ({distance / constants.AU:.2f} AU)"
+                if hasattr(body, "orbit_count"):
+                    text += f" | Orbits: {body.orbit_count}"
+        else:
+            text = f"{prefix}{body.name}: {_distance_label(body, parent)}"
+            if hasattr(body, "orbit_count"):
+                text += f" | Orbits: {body.orbit_count}"
+
+        text_surface = constants.FONT_1.render(text, True, body.color)
+        screen.blit(text_surface, (indent, 10 + y_offset[0]))
+        y_offset[0] += 20
+
+        for child in children_map.get(body, []):
+            _render_row(child, body, depth + 1)
+
+    # Display elapsed simulation time in years and days.
+    total_elapsed_time = state["total_elapsed_time"]
     years = int(total_elapsed_time // (365.25 * 24 * 3600))
     remaining_time = total_elapsed_time % (365.25 * 24 * 3600)
     days = int(remaining_time // (24 * 3600))
-
-    if years > 0:
-        time_text = f"Time: {years}y {days}d"
-    else:
-        time_text = f"Time: {days}d"
+    time_text = f"Time: {years}y {days}d" if years > 0 else f"Time: {days}d"
 
     text_surface = constants.FONT_1.render(time_text, True, constants.COLOR_TEXT)
-    screen.blit(text_surface, (10, 10 + y_offset))
+    screen.blit(text_surface, (10, 10 + y_offset[0]))
+    y_offset[0] += 20
 
-    y_offset += 20  # Move down for the next line of text
-
-    # Display the current scale of the simulation in meters per pixel
     meters_per_pixel = constants.AU / state["distance_scale"]
-
     scale_text = f"Scale: {meters_per_pixel:.2e} m/px"
-
     text_surface = constants.FONT_1.render(scale_text, True, constants.COLOR_TEXT)
-    screen.blit(text_surface, (10, 10 + y_offset))
+    screen.blit(text_surface, (10, 10 + y_offset[0]))
+    y_offset[0] += 20
 
-    y_offset += 20  # Move down for the next line of text
-
-    # Transient notifications: show any bodies that just completed an orbit
-    notifications = []
-    for b in bodies:
-        if getattr(b, "orbit_complete_flash", 0) > 0:
-            notifications.append(f"{b.name} completed an orbit")
-
+    # Transient notifications: show any bodies that just completed an orbit.
+    notifications = [f"{b.name} completed an orbit" for b in bodies if getattr(b, "orbit_complete_flash", 0) > 0]
     if notifications:
-        # Render notifications in the top-right corner, stacking downward
         nx = screen.get_width() - 10
         ny = 10
         for note in notifications:
@@ -68,76 +82,28 @@ def render_hud(screen, bodies, state):
             screen.blit(note_surf, (nx - note_surf.get_width(), ny))
             ny += 20
 
-    # Build mapping parent -> [children]. Prefer the authoritative `parent.children` lists
+    # Build mapping parent -> [children]. Prefer authoritative `parent.children`.
     children_map = defaultdict(list)
-    for b in bodies:
-        parent_children = getattr(b, "children", None)
+    for body in bodies:
+        parent_children = getattr(body, "children", None)
         if parent_children:
             for child in parent_children:
-                children_map[b].append(child)
+                children_map[body].append(child)
 
-    # Fallback: include any objects that still only have legacy `parent_body` set
-    for b in bodies:
-        parent = getattr(b, "parent_body", None)
-        if parent is not None:
-            # avoid duplicating entries already registered via parent.children
-            if b not in children_map.get(parent, []):
-                children_map[parent].append(b)
-
-    # Display top-level bodies (skip sun), and render their children indented below
+    # Fallback for legacy parent_body links.
     for body in bodies:
-        if getattr(body, "is_sun", False):
+        parent = getattr(body, "parent_body", None)
+        if parent is not None and body not in children_map.get(parent, []):
+            children_map[parent].append(body)
+
+    # Render roots first, then their descendants.
+    roots = [body for body in bodies if getattr(body, "parent_body", None) is None]
+    rendered = set()
+    for root in roots:
+        if root in rendered:
             continue
-
-        # Skip child entries here; they'll be rendered under their parent
-        if getattr(body, "parent_body", None) is not None:
-            continue
-
-        if earth_moon_only_view and body.name == "Earth":
-            text = "Earth: stationary"
-        else:
-            if sun is not None:
-                distance_to_sun = _distance_between(body, sun)
-            else:
-                distance_to_sun = body.distance_to_sun
-
-            distance_km = distance_to_sun / 1000
-            distance_au = distance_to_sun / constants.AU
-
-            text = f"{body.name}: {distance_km:,.0f} km ({distance_au:.2f} AU)"
-
-            # Add orbit count if available (show the actual count, even if 0)
-            if hasattr(body, "orbit_count"):
-                text += f" | Orbits: {body.orbit_count}"
-
-        text_surface = constants.FONT_1.render(text, True, body.color)
-        screen.blit(text_surface, (10, 10 + y_offset))
-        y_offset += 20
-
-        # Render children (moons) as indented rows under the parent
-        for child in children_map.get(body, []):
-            if earth_moon_only_view and body.name == "Earth" and child.name == "Moon":
-                child_distance = _distance_between(child, body)
-                child_text = f"- {child.name}: {child_distance / 1000:,.0f} km from Earth"
-                if hasattr(child, "orbit_count"):
-                    child_text += f" | Orbits: {child.orbit_count}"
-            else:
-                if sun is not None:
-                    child_distance_to_sun = _distance_between(child, sun)
-                else:
-                    child_distance_to_sun = child.distance_to_sun
-
-                child_km = child_distance_to_sun / 1000
-                child_au = child_distance_to_sun / constants.AU
-
-                child_text = f"- {child.name}: {child_km:,.0f} km ({child_au:.2f} AU)"
-                if hasattr(child, "orbit_count"):
-                    child_text += f" | Orbits: {child.orbit_count}"
-
-            child_surface = constants.FONT_1.render(child_text, True, child.color)
-            # Indent child entries slightly
-            screen.blit(child_surface, (30, 10 + y_offset))
-            y_offset += 20
+        rendered.add(root)
+        _render_row(root, None, 0)
 
 
 

@@ -25,6 +25,9 @@ def create_solar_system():
             planet_data["is_inner"]
         )
         planet.y_vel = planet_data["velocity"]
+        planet.parent_body = sun
+        planet.child_of = sun
+        sun.children.append(planet)
         planets.append(planet)
     
     return [sun] + planets
