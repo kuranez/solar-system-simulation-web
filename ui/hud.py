@@ -18,6 +18,9 @@ def render_hud(screen, bodies, state):
     y_offset = 0  # Initial vertical offset for text lines
 
     sun = next((body for body in bodies if getattr(body, "is_sun", False)), None)
+    earth = next((body for body in bodies if getattr(body, "name", None) == "Earth"), None)
+    moon = next((body for body in bodies if getattr(body, "name", None) == "Moon"), None)
+    earth_moon_only_view = sun is None and earth is not None and moon is not None and len(bodies) == 2
 
     def _distance_between(body_a, body_b):
         return (((body_a.x - body_b.x) ** 2 + (body_a.y - body_b.y) ** 2) ** 0.5)
@@ -90,19 +93,22 @@ def render_hud(screen, bodies, state):
         if getattr(body, "parent_body", None) is not None:
             continue
 
-        if sun is not None:
-            distance_to_sun = _distance_between(body, sun)
+        if earth_moon_only_view and body.name == "Earth":
+            text = "Earth: stationary"
         else:
-            distance_to_sun = body.distance_to_sun
+            if sun is not None:
+                distance_to_sun = _distance_between(body, sun)
+            else:
+                distance_to_sun = body.distance_to_sun
 
-        distance_km = distance_to_sun / 1000
-        distance_au = distance_to_sun / constants.AU
+            distance_km = distance_to_sun / 1000
+            distance_au = distance_to_sun / constants.AU
 
-        text = f"{body.name}: {distance_km:,.0f} km ({distance_au:.2f} AU)"
+            text = f"{body.name}: {distance_km:,.0f} km ({distance_au:.2f} AU)"
 
-        # Add orbit count if available (show the actual count, even if 0)
-        if hasattr(body, "orbit_count"):
-            text += f" | Orbits: {body.orbit_count}"
+            # Add orbit count if available (show the actual count, even if 0)
+            if hasattr(body, "orbit_count"):
+                text += f" | Orbits: {body.orbit_count}"
 
         text_surface = constants.FONT_1.render(text, True, body.color)
         screen.blit(text_surface, (10, 10 + y_offset))
@@ -110,17 +116,23 @@ def render_hud(screen, bodies, state):
 
         # Render children (moons) as indented rows under the parent
         for child in children_map.get(body, []):
-            if sun is not None:
-                child_distance_to_sun = _distance_between(child, sun)
+            if earth_moon_only_view and body.name == "Earth" and child.name == "Moon":
+                child_distance = _distance_between(child, body)
+                child_text = f"- {child.name}: {child_distance / 1000:,.0f} km from Earth"
+                if hasattr(child, "orbit_count"):
+                    child_text += f" | Orbits: {child.orbit_count}"
             else:
-                child_distance_to_sun = child.distance_to_sun
+                if sun is not None:
+                    child_distance_to_sun = _distance_between(child, sun)
+                else:
+                    child_distance_to_sun = child.distance_to_sun
 
-            child_km = child_distance_to_sun / 1000
-            child_au = child_distance_to_sun / constants.AU
+                child_km = child_distance_to_sun / 1000
+                child_au = child_distance_to_sun / constants.AU
 
-            child_text = f"- {child.name}: {child_km:,.0f} km ({child_au:.2f} AU)"
-            if hasattr(child, "orbit_count"):
-                child_text += f" | Orbits: {child.orbit_count}"
+                child_text = f"- {child.name}: {child_km:,.0f} km ({child_au:.2f} AU)"
+                if hasattr(child, "orbit_count"):
+                    child_text += f" | Orbits: {child.orbit_count}"
 
             child_surface = constants.FONT_1.render(child_text, True, child.color)
             # Indent child entries slightly
