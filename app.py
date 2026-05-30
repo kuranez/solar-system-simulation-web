@@ -39,7 +39,7 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS
 from ui.screen import pygame_surface_to_PNGbuf, draw_frame 
-from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -123,6 +123,7 @@ view_select = pn.widgets.Select(
 # Buttons for controling the simulation
 step_button = pn.widgets.Button(name="Next Frame", button_type="primary", width=150, css_classes=["big-button"])
 play_button = pn.widgets.Button(name="Play", button_type="success", width=150, css_classes=["big-button"])
+reset_button = pn.widgets.Button(name="Reset", button_type="warning", width=150, css_classes=["big-button"])
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
@@ -155,6 +156,9 @@ def update_view(event):
     if state['is_playing']:
         play_pause(None, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button)
 
+    # Reset elapsed simulation time whenever the user changes views
+    state['total_elapsed_time'] = 0.0
+
     # Load the new set of celestial bodies
     current_solarsystem = SIMULATION_VIEWS[view_name]["generator"]()
 
@@ -182,6 +186,7 @@ zoom_slider.param.watch(on_zoom_change, 'value')
 # Attach event handlers to buttons
 step_button.on_click(lambda event: on_step(event, screen, current_solarsystem, state, constants.COLOR_BACKGROUND, img_pane))
 play_button.on_click(lambda event: play_pause(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
+# reset_button.on_click(lambda event: stop_and_reset(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
 # zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 # zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, screen, constants.COLOR_BACKGROUND, img_pane))
 

@@ -205,6 +205,20 @@ def play_pause(event, state, screen, bodies,color_bg, img_pane, play_button):
             state['callback'].stop()
             state['callback'] = None
 
+def stop_and_reset(event, state, screen, bodies, color_bg, img_pane, play_button):
+    """Stop playback and reset the elapsed simulation time."""
+    if state.get('is_playing'):
+        state['is_playing'] = False
+        play_button.name = "Play"
+        play_button.button_type = "success"
+        if state.get('callback'):
+            state['callback'].stop()
+            state['callback'] = None
+
+    state['total_elapsed_time'] = 0.0
+    draw_frame(screen, bodies, state, color_bg)
+    img_pane.object = pygame_surface_to_PNGbuf(screen)
+
 def zoom_in(event, state, current_solarsystem, screen, color_bg, img_pane):
     """Handles the 'Zoom In' button click with full redraw logic."""
     # Increase scale
