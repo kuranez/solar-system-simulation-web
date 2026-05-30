@@ -1,42 +1,27 @@
-"""Create a simple Earth-Moon system."""
-
-from objects.base import Body
+"""Create a simple Earth-Moon system using object presets."""
 
 import constants
 
-EARTH_RADIUS_PX = 18
-MOON_RADIUS_PX = 5
+from objects import create_earth, create_moon
 
 
 def create_earth_moon_system():
-    earth = Body(
-        0,
-        0,
-        EARTH_RADIUS_PX,
-        constants.BODIES_DATA["Earth"]["mass"],
-        name="Earth",
-        color=constants.COLOR_EARTH,
-    )
+    earth = create_earth()
+    if earth is None:
+        return []
+
+    # Keep Earth fixed in this simple view, but still expose the hierarchy
+    # through parent/child links for the HUD.
     earth.static_body = True
     earth.draw_line = False
-    earth.original_radius = EARTH_RADIUS_PX
+    earth.x = 0
+    earth.y = 0
+    earth.original_radius = 18
 
-    moon_distance = constants.MOON_DATA["average_distance"]
-    moon = Body(
-        -moon_distance,
-        0,
-        MOON_RADIUS_PX,
-        constants.MOON_DATA["mass"],
-        name="Moon",
-        color=constants.MOON_DATA["color"],
-    )
+    moon = create_moon(earth)
     moon.static_body = False
     moon.draw_line = True
-    moon.child_of = earth
-    moon.parent_body = earth
-    earth.children.append(moon)
-    moon.original_radius = MOON_RADIUS_PX
-
+    moon.original_radius = 5
     moon.y_vel = constants.MOON_DATA["orbital_velocity"]
-    
+
     return [earth, moon]

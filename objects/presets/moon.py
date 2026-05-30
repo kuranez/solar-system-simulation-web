@@ -22,11 +22,4 @@ def create_moon(parent_body, distance_scale=constants.DEFAULT_SCALE):
 		x_vel=parent_body.x_vel,
 		y_vel=parent_body.y_vel + moon_data["orbital_velocity"],
 	)
-
-	# Register as a child of the parent body for HUD/grouping and lifecycle operations
-	try:
-		parent_body.children.append(moon)
-	except Exception:
-		# If parent_body doesn't support children for some reason, skip silently
-		pass
 	return moon

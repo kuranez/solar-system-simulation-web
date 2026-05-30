@@ -9,6 +9,8 @@ from .base import Body
 
 
 class Planet(Body):
+	# Cycle through planet colors for each new instance if not specified
+	# Kept here in the class to maintain state across instances without global variables
 	cycle_colors = itertools.cycle([
 		constants.COLOR_MERCURY,
 		constants.COLOR_VENUS,
