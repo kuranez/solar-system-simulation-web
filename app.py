@@ -27,21 +27,17 @@ from simulation.scene import build_simulation_views
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
 from ui.canvas import SimulationCanvas, sync_canvas_frame
-from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, periodic_update, play_pause, stop_and_reset, refresh_speed_display
+from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, play_pause, stop_and_reset, refresh_speed_display
 
 
 # Initialize Panel extension
 pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
-# pn.extension() 
 
 # Canvas dimensions are still driven by the simulation constants.
 width, height = constants.WIDTH, constants.HEIGHT
 
 SIMULATION_VIEWS = build_simulation_views()
-
 initial_view_name = "[Simple] Solar System"
-current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
-
 
 def choose_serve_port(preferred_port=5000):
     try:
@@ -53,30 +49,27 @@ def choose_serve_port(preferred_port=5000):
             sock.bind(("127.0.0.1", 0))
             return sock.getsockname()[1]
 
-
 # State variables for app
 # ---------------------------------------------
-# Screen variables for centering and scaling
 state = {
     'is_playing': False,
     'callback': None,
     'base_distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'],
-    'distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'], # orbital distance scaling
+    'distance_scale': SIMULATION_VIEWS[initial_view_name]['base_scale'],
     'simulation_timestep': SIMULATION_VIEWS[initial_view_name].get('scene', {}).get('simulation_timestep', constants.TIMESTEP),
-    'planet_scale': 1.0, # planet size scaling (can be adjusted separately if needed)
+    'planet_scale': 1.0,
     'offset_x': width // 2,
     'offset_y': height // 2,
-    'total_elapsed_time': 0.0, # Total elapsed simulation time in seconds
+    'total_elapsed_time': 0.0,
     'frame_period': 10,
     'scene_token': 1,
     'render_stride': 1.0,
     'render_skip_counter': 0.0,
-    'max_completed_orbit_trails': SIMULATION_VIEWS[initial_view_name]['max_completed_orbit_trails'],
-    'min_orbits_before_prune': SIMULATION_VIEWS[initial_view_name]['min_orbits_before_prune'],
+    'max_completed_orbit_trails': SIMULATION_VIEWS[initial_view_name].get('max_completed_orbit_trails', 5),
+    'min_orbits_before_prune': SIMULATION_VIEWS[initial_view_name].get('min_orbits_before_prune', 1),
 }
 
-# Controls for Panel UI
-# ---------------------------------------------
+current_solarsystem = SIMULATION_VIEWS[initial_view_name]["generator"]()
 
 # Selection of predefined views (e.g., Sun & Earth, Full Solar System)
 view_select = pn.widgets.Select(

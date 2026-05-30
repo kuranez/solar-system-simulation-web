@@ -32,7 +32,7 @@ import time
 
 import panel as pn # For building the web interface
 import constants # For simulation constants like scale and colors
-from simulation.scale import calculate_scaled_sizes # For updating body sizes based on current scale
+from simulation.scale import calculate_scaled_sizes, scale_bodies_from_original_radius, calculate_hierarchical_scale
 from .canvas import sync_canvas_frame # For browser-side canvas rendering
 
 
@@ -40,14 +40,24 @@ SPEED_STEP_MS = 10
 MIN_FRAME_PERIOD = 10
 MAX_FRAME_PERIOD = 500
 SIMULATION_SPEED_PRESETS = [
+    {"simulation_timestep": 600.0, "render_stride": 1.0},
+    {"simulation_timestep": 1800.0, "render_stride": 1.0},
+    {"simulation_timestep": 3600.0, "render_stride": 1.0},
+    {"simulation_timestep": 7200.0, "render_stride": 1.0},
+    {"simulation_timestep": 14400.0, "render_stride": 1.0},
+    {"simulation_timestep": 28800.0, "render_stride": 1.0},
+    {"simulation_timestep": 43200.0, "render_stride": 1.0},
+    {"simulation_timestep": 64800.0, "render_stride": 1.0},
     {"simulation_timestep": 1.0 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 1.25 * constants.TIMESTEP, "render_stride": 1.0},
     {"simulation_timestep": 1.5 * constants.TIMESTEP, "render_stride": 1.0},
     {"simulation_timestep": 2 * constants.TIMESTEP, "render_stride": 1.0},
     {"simulation_timestep": 3 * constants.TIMESTEP, "render_stride": 1.0},
+    {"simulation_timestep": 5 * constants.TIMESTEP, "render_stride": 1.0},
     {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.0},
     {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.5},
-    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 1.75},
     {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 2.0},
+    {"simulation_timestep": 7 * constants.TIMESTEP, "render_stride": 3.0},
 ]
 
 
@@ -156,79 +166,49 @@ def update_simple_body_sizes(bodies, size_factor):
         elif body.name == "Moon":
             body.radius = max(1, int((constants.BASE_SIZE * size_factor) / earth_radius_ratio))
 
-def scale_bodies_from_original_radius(bodies, scale, body_names=None):
-    """Scale body radii from each body's `original_radius` baseline.
+def update_scene_scaling(bodies, state, scale, view_cfg):
+	"""General purpose scaling handler that simplifies scene-specific logic."""
+	scene_cfg = view_cfg.get("scene", {})
+	mode = view_cfg.get("scale_mode", "distance")
 
-    This keeps zoom logic consistent across simple views while leaving the
-    physics-driven positions untouched.
-    """
-    body_names = set(body_names) if body_names is not None else None
+	# 1. Update distance_scale
+	if mode == "proportional":
+		# Tweak: Use base_scale as the anchor for 1 AU proportionality
+		ref_scale = view_cfg.get("base_scale", constants.DEFAULT_SCALE)
+		state["distance_scale"] = ref_scale * scale
+	elif mode == "static":
+		state["distance_scale"] = 1.0
+	elif mode == "logarithmic":
+		state["distance_scale"] = state.get("base_distance_scale", constants.DEFAULT_SCALE) * scale
+	else: # "distance"
+		state["distance_scale"] = state.get("base_distance_scale", constants.DEFAULT_SCALE) * scale
 
-    for body in bodies:
-        if body_names is not None and body.name not in body_names:
-            continue
-        if hasattr(body, "original_radius"):
-            body.radius = max(1, int(body.original_radius * scale))
+	# 2. Update body radii
+	scaled_bodies = view_cfg.get("scaled_bodies")
+	if scaled_bodies:
+		scale_bodies_from_original_radius(bodies, scale, body_names=scaled_bodies)
+	elif mode == "distance":
+		update_body_radii(bodies, state["distance_scale"])
 
-def update_proportional_sun_earth_moon(bodies, state, scale, view_cfg):
-    # Proportional view: compute a distance_scale that maps 1 AU -> desired pixel distance
-    # without mutating physical `body.x` values (which are in meters). This preserves
-    # SI-based physics while allowing a proportional visual scaling.
-    # Desired Sun-Earth pixel distance at this slider scale
-    sun_earth_px = view_cfg.get("sun_earth_base_px", 350) * scale
+	# 3. Handle hierarchical visual distance overrides (e.g. Earth-Moon)
+	anchors = view_cfg.get("visual_anchors", [])
+	anchored_targets = set()
+	for parent_name, target_name in anchors:
+		try:
+			parent = next(b for b in bodies if getattr(b, "name", None) == parent_name)
+			target = next(b for b in bodies if getattr(b, "name", None) == target_name)
+			anchored_targets.add(target_name)
 
-    # Map 1 AU (meters) to the desired pixel distance
-    # distance_scale is pixels per meter
-    state["distance_scale"] = sun_earth_px / constants.AU
+			v_scale = calculate_hierarchical_scale(parent, target, scale, scene_cfg, mode=mode)
+			if v_scale is not None:
+				target.visual_distance_scale = v_scale
+		except (StopIteration, AttributeError):
+			continue
 
-    # Update visual radii from the shared pixel baseline.
-    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth", "Moon"))
-    # Compute a moon-specific visual distance_scale so the Earth-Moon separation
-    # matches the desired pixel ratio in this proportional view. This anchors the
-    # Moon to Earth visually while keeping physics in meters.
-    try:
-        earth = next(b for b in bodies if getattr(b, 'name', None) == 'Earth')
-        moon = next(b for b in bodies if getattr(b, 'name', None) == 'Moon')
-        desired_moon_px = view_cfg.get('sun_earth_base_px', 350) * view_cfg.get('earth_moon_ratio', 0.257) * scale
-        # enforce a sensible minimum pixel separation so the Moon never visually collapses
-        desired_moon_px = max(desired_moon_px, view_cfg.get('moon_min_px', 8))
-        delta_m = abs(moon.x - earth.x)
-        if delta_m > 0:
-            moon_visual_scale = desired_moon_px / delta_m
-            moon.visual_distance_scale = moon_visual_scale
-    except StopIteration:
-        # no earth/moon pair in this view
-        pass
-    # Remove any leftover overrides on non-moon bodies
-    for b in bodies:
-        if getattr(b, 'name', None) != 'Moon' and hasattr(b, 'visual_distance_scale'):
-            delattr(b, 'visual_distance_scale')
-
-
-def update_static_scene_scaling(bodies, state, scale, scaled_body_names, fixed_body_names=()):
-    """Scale preset scenes from their original positions and radii."""
-    fixed_body_names = set(fixed_body_names)
-    scaled_body_names = set(scaled_body_names)
-
-    for body in bodies:
-        if hasattr(body, "original_x") and body.name not in fixed_body_names:
-            body.x = body.original_x * scale
-            body.y = body.original_y * scale
-
-        if hasattr(body, "original_radius") and body.name in scaled_body_names:
-            body.radius = max(1, int(body.original_radius * scale))
-
-    state["distance_scale"] = 1.0
-
-
-def update_simple_sun_earth(bodies, state, scale, view_cfg):
-    state["distance_scale"] = state["base_distance_scale"] * scale
-    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth",))
-
-
-def update_simple_earth_moon(bodies, state, scale, view_cfg):
-    state["distance_scale"] = state["base_distance_scale"] * scale
-    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth", "Moon"))
+	# Cleanup overrides for bodies not being currently anchored
+	for b in bodies:
+		if getattr(b, "name", None) not in anchored_targets and hasattr(b, "visual_distance_scale"):
+			delattr(b, "visual_distance_scale")
 
 def update_body_radii(current_solarsystem, distance_scale):
     """Updates the radius of each body based on the current distance scale."""
@@ -253,16 +233,13 @@ def update_body_radii(current_solarsystem, distance_scale):
             )
 
 
-def apply_zoom_for_view(current_solarsystem, state, scale, view_cfg):
-    """Apply the active view's zoom behavior and redraw state."""
-    updater = view_cfg.get("zoom_updater")
-    mode = view_cfg.get("scale_mode", "distance")
-
-    if updater is not None:
-        updater(current_solarsystem, state, scale, view_cfg)
-    elif mode == "distance":
-        state["distance_scale"] = state["base_distance_scale"] * scale
-        update_body_radii(current_solarsystem, state["distance_scale"])
+def apply_zoom_for_view(bodies, state, scale, view_cfg):
+	"""Apply the active view's zoom behavior using generalized scaling."""
+	updater = view_cfg.get("zoom_updater")
+	if updater:
+		updater(bodies, state, scale, view_cfg)
+	else:
+		update_scene_scaling(bodies, state, scale, view_cfg)
 
 # Event handlers for UI buttons
 def on_step(event, bodies, state, color_bg, canvas_view):

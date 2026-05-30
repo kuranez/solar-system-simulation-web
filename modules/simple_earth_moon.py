@@ -17,12 +17,12 @@ def create_earth_moon_system():
     earth.draw_line = False
     earth.x = 0
     earth.y = 0
-    earth.original_radius = EARTH_MOON_SCENE["earth_radius_px"]
+    earth.original_radius = EARTH_MOON_SCENE.get("earth_radius_px", 60)
 
     moon = create_moon(earth)
     moon.static_body = False
     moon.draw_line = True
-    moon.original_radius = EARTH_MOON_SCENE["moon_radius_px"]
+    moon.original_radius = EARTH_MOON_SCENE.get("moon_radius_px", 20)
     moon.y_vel = EARTH_MOON_SCENE["moon_velocity"]
 
     return [earth, moon]
