@@ -32,7 +32,6 @@ import panel as pn # For building the web interface
 import constants # For simulation constants like scale and colors
 from simulation.solarsystem_scale import calculate_scaled_sizes # For updating body sizes based on current scale
 from .screen import pygame_surface_to_PNGbuf, draw_frame # For rendering the simulation and converting to PNG for Panel display
-from modules.simple_sun_earth_moon import earth_radius_ratio # For maintaining correct size ratio between Earth and Moon in the simple system
 
 def advance_simulation(bodies, state):
     """Advances the simulation by one logical frame.
@@ -66,14 +65,24 @@ def update_simple_body_sizes(bodies, size_factor):
         elif body.name == "Moon":
             body.radius = max(1, int((constants.BASE_SIZE * size_factor) / earth_radius_ratio))
 
+def scale_bodies_from_original_radius(bodies, scale, body_names=None):
+    """Scale body radii from each body's `original_radius` baseline.
+
+    This keeps zoom logic consistent across simple views while leaving the
+    physics-driven positions untouched.
+    """
+    body_names = set(body_names) if body_names is not None else None
+
+    for body in bodies:
+        if body_names is not None and body.name not in body_names:
+            continue
+        if hasattr(body, "original_radius"):
+            body.radius = max(1, int(body.original_radius * scale))
+
 def update_proportional_sun_earth_moon(bodies, state, scale, view_cfg):
     # Proportional view: compute a distance_scale that maps 1 AU -> desired pixel distance
     # without mutating physical `body.x` values (which are in meters). This preserves
     # SI-based physics while allowing a proportional visual scaling.
-    sun = bodies[0]
-    earth = bodies[1]
-    moon = bodies[2]
-
     # Desired Sun-Earth pixel distance at this slider scale
     sun_earth_px = view_cfg.get("sun_earth_base_px", 350) * scale
 
@@ -81,24 +90,8 @@ def update_proportional_sun_earth_moon(bodies, state, scale, view_cfg):
     # distance_scale is pixels per meter
     state["distance_scale"] = sun_earth_px / constants.AU
 
-    # Update visual radii based on the computed distance_scale
-    update_body_radii(bodies, state["distance_scale"])
-    # Ensure Moon radius scales relative to Earth's visual radius (calculate_scaled_sizes
-    # doesn't include the Moon). Keep a minimum pixel size.
-    try:
-        earth_radius = next(b.radius for b in bodies if getattr(b, 'name', None) == 'Earth')
-        for b in bodies:
-            if getattr(b, 'name', None) == 'Moon':
-                # Physical radius ratio: Moon_radius_m / Earth_radius_m
-                phys_ratio = constants.BODIES_DATA.get('Moon', {}).get('radius', constants.BODIES_DATA['Earth']['radius']) / constants.BODIES_DATA['Earth']['radius'] if False else (constants.MOON_DATA['radius'] / constants.BODIES_DATA['Earth']['radius'])
-                # Fallback: use known constants if structure differs
-                try:
-                    phys_ratio = constants.MOON_DATA['radius'] / constants.BODIES_DATA['Earth']['radius']
-                except Exception:
-                    phys_ratio = 0.27
-                b.radius = max(1, int(earth_radius * phys_ratio))
-    except StopIteration:
-        pass
+    # Update visual radii from the shared pixel baseline.
+    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth", "Moon"))
     # Compute a moon-specific visual distance_scale so the Earth-Moon separation
     # matches the desired pixel ratio in this proportional view. This anchors the
     # Moon to Earth visually while keeping physics in meters.
@@ -138,27 +131,13 @@ def update_static_scene_scaling(bodies, state, scale, scaled_body_names, fixed_b
 
 
 def update_simple_sun_earth(bodies, state, scale, view_cfg):
-    update_static_scene_scaling(
-        bodies,
-        state,
-        scale,
-        scaled_body_names=("Earth",),
-        fixed_body_names=("Sun",),
-    )
+    state["distance_scale"] = state["base_distance_scale"] * scale
+    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth",))
 
 
 def update_simple_earth_moon(bodies, state, scale, view_cfg):
-    """Zoom updater for the simple Earth-Moon preset.
-
-    Positions are already driven by physics in meters, so zooming only needs to
-    update the distance scale and scale the visible radii from their original
-    pixel sizes.
-    """
     state["distance_scale"] = state["base_distance_scale"] * scale
-
-    for body in bodies:
-        if hasattr(body, "original_radius"):
-            body.radius = max(1, int(body.original_radius * scale))
+    scale_bodies_from_original_radius(bodies, scale, body_names=("Earth", "Moon"))
 
 def update_body_radii(current_solarsystem, distance_scale):
     """Updates the radius of each body based on the current distance scale."""

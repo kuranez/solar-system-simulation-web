@@ -38,6 +38,7 @@ def create_sun_and_earth_system():
     earth.child_of = sun
     earth.parent_body = sun
     sun.children.append(earth)
+    earth.original_radius = EARTH_RADIUS_PX
 
     earth.y_vel = constants.BODIES_DATA["Earth"]["orbital_velocity"]
 
