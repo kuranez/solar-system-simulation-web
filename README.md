@@ -56,12 +56,13 @@ solar-system-simulation-web/
 │   └── presets/            
 ├── ui/                     # UI components and rendering helpers
 │   ├── css.py
+│   ├── canvas.py
 │   ├── hud.py
 │   ├── screen.py
 │   └── ui_handlers.py
 ├── simulation/             # Core simulation engine and scaling utilities
-│   ├── solarsystem_sim.py
-│   └── solarsystem_scale.py
+│   ├── physicss.py
+│   └── scale.py
 ├── requirements.txt
 └── README.md
 ```
