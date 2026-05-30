@@ -95,12 +95,6 @@ play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="su
 reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 slower_button = pn.widgets.Button(name="Slower", icon="minus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 faster_button = pn.widgets.Button(name="Faster", icon="plus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
-# speed_status = pn.pane.Str(
-#     f"Step: {state['simulation_timestep'] / 86400.0:.1f} d/frame",
-#     margin=(0, 12, 0, 12),
-#     styles={"font-size": "13px", "line-height": "42px", "white-space": "nowrap"},
-# )
-# state['speed_status'] = speed_status
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 

@@ -98,7 +98,6 @@ def _sync_speed_status(state):
 def increase_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
     """Increase simulation speed by raising the simulated time advanced per frame."""
     _step_simulation_timestep(state, +1)
-    refresh_speed_display(canvas_view, state)
 
     sync_canvas_frame(
         canvas_view,
@@ -113,7 +112,6 @@ def increase_simulation_speed(event, state, bodies, color_bg, canvas_view, play_
 def decrease_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
     """Decrease simulation speed by lowering the simulated time advanced per frame."""
     _step_simulation_timestep(state, -1)
-    refresh_speed_display(canvas_view, state)
 
     sync_canvas_frame(
         canvas_view,
@@ -323,6 +321,7 @@ def play_pause(event, state, bodies, color_bg, canvas_view, play_button):
             state['callback'].stop()
             state['callback'] = None
         state['last_tick_time'] = None
+        refresh_speed_display(canvas_view, state)
 
 def stop_and_reset(event, state, bodies, color_bg, canvas_view, play_button):
     """Stop playback and reset the elapsed simulation time."""
@@ -346,6 +345,7 @@ def stop_and_reset(event, state, bodies, color_bg, canvas_view, play_button):
         scene_token=state['scene_token'],
         reset=True,
     )
+    refresh_speed_display(canvas_view, state)
 
 def zoom_in(event, state, current_solarsystem, color_bg, canvas_view):
     """Handles the 'Zoom In' button click with full redraw logic."""
@@ -400,5 +400,6 @@ def refresh_speed_display(canvas_view, state):
         frame_data["speed_text"] = (
             f"Step: {state['simulation_timestep']/86400:.1f} d/frame"
         )
+
 
     canvas_view.frame_data = frame_data

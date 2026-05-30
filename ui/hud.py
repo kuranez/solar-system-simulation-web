@@ -124,6 +124,18 @@ def render_hud(screen, bodies, state):
     screen.blit(text_surface, (10, 10 + y_offset[0]))
     y_offset[0] += 20
 
+    # Speed display
+    simulation_timestep = state.get("simulation_timestep", constants.TIMESTEP)
+    render_stride = state.get("render_stride", 1.0)
+    if render_stride > 1:
+        speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame | Render x{render_stride:g}"
+    else:
+        speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame"
+    text_surface = constants.FONT_1.render(speed_text, True, constants.COLOR_TEXT)
+    screen.blit(text_surface, (10, 10 + y_offset[0]))
+    y_offset[0] += 20
+
+    # Scale display
     meters_per_pixel = constants.AU / state["distance_scale"]
     scale_text = f"Scale: {meters_per_pixel:.2e} m/px"
     text_surface = constants.FONT_1.render(scale_text, True, constants.COLOR_TEXT)

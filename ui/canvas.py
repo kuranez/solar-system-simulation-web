@@ -530,9 +530,9 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	scale_text = f"Scale: {meters_per_pixel:.2e} m/px | {au_per_pixel:.2e} AU/px"
 	frame_period = int(state.get("frame_period", 80))
 	simulation_timestep = float(state.get("simulation_timestep", constants.TIMESTEP))
-	render_stride = max(1, int(state.get("render_stride", 1)))
+	render_stride = float(state.get("render_stride", 1.0))
 	if render_stride > 1:
-		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame | Render x{render_stride}"
+		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame | Render x{render_stride:g}"
 	else:
 		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame"
 
