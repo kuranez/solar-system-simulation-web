@@ -187,9 +187,11 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 
 		if (!canvasState.listenersReady) {
 		  canvasState.listenersReady = true
-		  const minZoom = 0.2
-		  const maxZoom = 8.0
-		  const zoomStep = 0.0015
+		  // Allow zooming much further out, but limit how far you can zoom in
+		  const minZoom = 0.05
+		  const maxZoom = 2.0
+		  // Increase step so wheel scrolling feels responsive at wider ranges
+		  const zoomStep = 0.0025
 
 		  const finishDrag = () => {
 		    canvasState.dragging = false
