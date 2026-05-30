@@ -8,20 +8,6 @@ earth_radius_ratio = (
     constants.BODIES_DATA["Earth"]["radius"] / constants.BODIES_DATA["Moon"]["radius"]
 )
 
-# # Keep 1 AU fixed in this preset (with base_scale = 1.0 in app.py)
-# SUN_EARTH_PIXEL_DISTANCE = constants.DEFAULT_SCALE * constants.AU # Scale the actual distance to pixels == 350 pixels for 1 AU at default scale
-
-# # Moon boost factor for visibility
-# MOON_DISTANCE_VISUAL_FACTOR = 30.0
-# EARTH_MOON_PIXEL_DISTANCE = (
-#     SUN_EARTH_PIXEL_DISTANCE * (constants.MOON_DATA["perigee"] / constants.AU)
-# ) * MOON_DISTANCE_VISUAL_FACTOR
-
-# SUN_RADIUS_PX = 2
-# EARTH_RADIUS_PX = constants.BASE_SIZE
-# MOON_RADIUS_PX = constants.BASE_SIZE / earth_radius_ratio 
-
-
 def create_sun_earth_moon_system(
     earth_radius_px=constants.BASE_SIZE,
     sun_radius_px=2,
