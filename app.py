@@ -30,7 +30,7 @@ from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
 from ui.canvas import SimulationCanvas, sync_canvas_frame
-from ui.ui_handlers import advance_simulation, apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, periodic_update, play_pause, stop_and_reset, update_proportional_sun_earth_moon, update_simple_earth_moon, update_body_radii
 
 
 # Initialize Panel extension
@@ -65,7 +65,7 @@ SIMULATION_VIEWS = {
         "base_scale": 1.0,
         "zoom_updater": update_proportional_sun_earth_moon, # Custom updater for proportional scaling of the Sun-Earth-Moon system
         "scale_mode": "proportional", # This view will use proportional scaling for both distance and size based on the slider
-        "sun_earth_base_px": 350, # Base pixel distance for Sun-Earth at default scale
+        "sun_earth_base_px": 420, # Base pixel distance for Sun-Earth at default scale
         "earth_moon_ratio": 0.257, # Ratio of Earth-Moon
     },
     "[Simple] Solar System": {
@@ -123,26 +123,13 @@ view_select = pn.widgets.Select(
 
 # Buttons for controling the simulation
 button_stylesheets = [BUTTON_CSS]
-step_button = pn.widgets.Button(name="Next Frame", icon="player-step-forward", button_type="primary", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+# step_button = pn.widgets.Button(name="Next Frame", icon="player-step-forward", button_type="primary", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="success", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 slower_button = pn.widgets.Button(name="Slower", icon="minus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 faster_button = pn.widgets.Button(name="Faster", icon="plus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
-
-# New slider for zoom control
-zoom_slider = pn.widgets.FloatSlider(
-    label='Zoom & Scale', 
-    start=0.05,  # Minimum zoom factor (5%)
-    end=1.50,    # Maximum zoom factor (150%)
-    step=0.05, 
-    value=1.0,   # Start at base view scale
-    format="0.0%",  # Display as percentage
-    width=270,
-    margin=0,
-    stylesheets=[CUSTOM_SLIDER_CSS],
-)
 
 # Browser-side canvas view.
 canvas_view = SimulationCanvas(sizing_mode="stretch_both", margin=0, align="center", css_classes=["app-viewer"])
@@ -176,7 +163,7 @@ def update_view(event):
 
     # Apply per-view base scale so each simulation can define its own distance mapping.
     state['base_distance_scale'] = SIMULATION_VIEWS[view_name]['base_scale']
-    apply_zoom_for_view(current_solarsystem, state, zoom_slider.value, SIMULATION_VIEWS[view_name])
+    apply_zoom_for_view(current_solarsystem, state, 1.0, SIMULATION_VIEWS[view_name])
     state['scene_token'] += 1
     
     # Push a reset frame to clear the browser-side trail state.
@@ -192,25 +179,8 @@ def update_view(event):
 # Attach the callback to the view selector
 view_select.param.watch(update_view, 'value')
 
-def on_zoom_change(event):
-    view_cfg = SIMULATION_VIEWS[view_select.value]
-    apply_zoom_for_view(current_solarsystem, state, event.new, view_cfg)
-    state['scene_token'] += 1
-
-    sync_canvas_frame(
-        canvas_view,
-        current_solarsystem,
-        state,
-        constants.COLOR_BACKGROUND,
-        scene_token=state['scene_token'],
-        reset=True,
-    )
-
-# Attach the callback to the slider
-zoom_slider.param.watch(on_zoom_change, 'value')
-
 # Attach event handlers to buttons
-step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
+# step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
 play_button.on_click(lambda event: play_pause(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 slower_button.on_click(lambda event: decrease_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 faster_button.on_click(lambda event: increase_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
@@ -220,7 +190,7 @@ faster_button.on_click(lambda event: increase_simulation_speed(event, state, cur
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row(play_button, slower_button, faster_button, step_button, zoom_slider, view_select, align="center", sizing_mode="fixed", width=1120, height=60, margin=0, css_classes=["app-controls"])
+controls = pn.Row(play_button, slower_button, faster_button, pn.layout.HSpacer(), view_select, align="center", sizing_mode="fixed", width=1120, height=60, margin=0, css_classes=["app-controls"])
 app = pn.Column(controls, canvas_view, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
 
 

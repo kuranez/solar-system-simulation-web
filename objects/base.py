@@ -43,7 +43,7 @@ class Body:
 		self.orbit_samples_since_completion = 0
 		self.orbit_completion_cooldown = 0
 		# Transient HUD flash timer (frames) set when an orbit completes
-		self.orbit_complete_flash = 0
+		# self.orbit_complete_flash = 0
 		self.prev_x = x
 		self.prev_y = y
 		self.x_vel = 0.0
@@ -51,6 +51,19 @@ class Body:
 		self.draw_line = True
 		# Children bodies (moons, rings, etc.) — factories should append here
 		self.children = []
+
+		# Copy orbital extrema from constants table when available so HUD can read them
+		try:
+			const_entry = constants.BODIES_DATA.get(self.name) if hasattr(constants, 'BODIES_DATA') else None
+			# Special-case Moon data
+			if const_entry is None and getattr(constants, 'MOON_DATA', None) and self.name == 'Moon':
+				const_entry = constants.MOON_DATA
+			if const_entry:
+				for key in ('perihelion', 'aphelion', 'perigee', 'apogee', 'average_distance'):
+					if key in const_entry and getattr(self, key, None) is None:
+						setattr(self, key, const_entry.get(key))
+		except Exception:
+			pass
 
 	def update_distance_to_sun(self, sun):
 		physics.update_distance_to_sun(self, sun)
@@ -62,8 +75,8 @@ class Body:
 		physics.advance_body(self, current_solarsystem)
 
 		# Decrement any transient HUD flash timer (presentations/rendering run per-frame)
-		if getattr(self, "orbit_complete_flash", 0) > 0:
-			self.orbit_complete_flash -= 1
+		# if getattr(self, "orbit_complete_flash", 0) > 0:
+		#     self.orbit_complete_flash -= 1
 
 	def _check_orbit_completion(self, current_solarsystem=None):
 		# Compute current point in the same reference frame used when recording orbit points
@@ -119,7 +132,8 @@ class Body:
 			self.orbit_samples_since_completion = 0
 			self.orbit_completion_cooldown = 12
 			try:
-				self.orbit_complete_flash = 180
+				# self.orbit_complete_flash = 180
+				pass
 			except Exception:
 				pass
 

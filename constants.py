@@ -32,9 +32,9 @@ earth_diameter = 12742e3  # Earth's diameter in meters
 PLANET_ZOOM_EXPONENT = 0.5  # Exponent for zoom scaling (0.5 means square root scaling)
 
 # Simulation Speed
-# Reduce the global timestep to 1 hour to improve stability and make bodies
+# Reduce the global timestep to 12 hours to improve stability and make bodies
 # move less per rendered frame (prevents fast detachment of moons).
-TIMESTEP = 3600.0*12  # Seconds in 12 hours (0.5 days) - Adjusted for better stability
+TIMESTEP = 3600.0*24  # Seconds in 24 hours - Adjusted for better stability
 
 # Solar System Colors
 COLOR_SUN = (252, 150, 1)

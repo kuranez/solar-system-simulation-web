@@ -32,6 +32,41 @@ def render_hud(screen, bodies, state):
 
         return f"{distance / 1000:,.0f} km from {parent.name}"
 
+    def _minmax_label(body, parent):
+        if getattr(body, "static_body", False):
+            return ""
+
+        # Prefer instance attributes, fall back to constants lookup by name
+        min_d = getattr(body, "perihelion", None) or getattr(body, "perigee", None) or getattr(body, "average_distance", None)
+        max_d = getattr(body, "aphelion", None) or getattr(body, "apogee", None) or getattr(body, "average_distance", None)
+        if min_d is None or max_d is None:
+            const_entry = None
+            try:
+                const_entry = constants.BODIES_DATA.get(getattr(body, "name", ""), None) or (constants.MOON_DATA if getattr(body, "name", "") == "Moon" else None)
+            except Exception:
+                const_entry = None
+            if const_entry:
+                if min_d is None:
+                    min_d = const_entry.get("perihelion") or const_entry.get("perigee") or const_entry.get("average_distance")
+                if max_d is None:
+                    max_d = const_entry.get("aphelion") or const_entry.get("apogee") or const_entry.get("average_distance")
+        if min_d is None and max_d is None:
+            return ""
+
+        parts = []
+        if min_d is not None:
+            if getattr(parent, "is_sun", False):
+                parts.append(f"min: {min_d/1000:,.0f} km ({min_d/constants.AU:.2f} AU)")
+            else:
+                parts.append(f"min: {min_d/1000:,.0f} km")
+        if max_d is not None:
+            if getattr(parent, "is_sun", False):
+                parts.append(f"max: {max_d/1000:,.0f} km ({max_d/constants.AU:.2f} AU)")
+            else:
+                parts.append(f"max: {max_d/1000:,.0f} km")
+
+        return " | " + " ".join(parts)
+
     def _render_row(body, parent, depth):
         if body in rendered:
             return
@@ -59,6 +94,15 @@ def render_hud(screen, bodies, state):
         screen.blit(text_surface, (indent, 10 + y_offset[0]))
         y_offset[0] += 20
 
+        # Render min/max as a subrow (indented) when available and body isn't stationary
+        minmax = _minmax_label(body, parent)
+        if minmax:
+            # strip leading separator if present
+            mm_text = minmax.lstrip(" | ")
+            mm_surf = constants.FONT_1.render(mm_text, True, getattr(constants, "COLOR_HUD_TEXT", constants.COLOR_TEXT))
+            screen.blit(mm_surf, (indent + 20, 10 + y_offset[0]))
+            y_offset[0] += 20
+
         for child in children_map.get(body, []):
             _render_row(child, body, depth + 1)
 
@@ -79,15 +123,6 @@ def render_hud(screen, bodies, state):
     screen.blit(text_surface, (10, 10 + y_offset[0]))
     y_offset[0] += 20
 
-    # Transient notifications: show any bodies that just completed an orbit.
-    notifications = [f"{b.name} completed an orbit" for b in bodies if getattr(b, "orbit_complete_flash", 0) > 0]
-    if notifications:
-        nx = screen.get_width() - 10
-        ny = 10
-        for note in notifications:
-            note_surf = constants.FONT_1.render(note, True, constants.COLOR_TEXT)
-            screen.blit(note_surf, (nx - note_surf.get_width(), ny))
-            ny += 20
 
     # Build mapping parent -> [children]. Prefer authoritative `parent.children`.
     children_map = defaultdict(list)

@@ -9,7 +9,7 @@ earth_radius_ratio = (
 )
 
 def create_sun_earth_moon_system(
-    earth_radius_px=constants.BASE_SIZE,
+    earth_radius_px=max(1, int(constants.BASE_SIZE * 0.8)),
     sun_radius_px=2,
 ):
     """Create a dynamic Sun-Earth-Moon system using SI units for positions.
@@ -20,7 +20,7 @@ def create_sun_earth_moon_system(
     moon_radius_px = max(1, int(earth_radius_px / earth_radius_ratio))
 
     # Visual baseline for proportional view (pixels)
-    sun_earth_base_px = 350
+    sun_earth_base_px = 420
     earth_moon_ratio = 0.257
 
     # Place Sun at origin (meters)
