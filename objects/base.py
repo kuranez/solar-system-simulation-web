@@ -154,26 +154,44 @@ class Body:
 			)
 		return points
 
-	def _draw_point_trail(self, display_surface, orbit_points, fade_scale=1.5):
+	def _draw_point_trail(self, display_surface, orbit_points, fade_scale=1.5, color_override=None, alpha=255):
 		if len(orbit_points) < 2:
 			return
+
+		# If an alpha < 255 is requested, draw onto a temporary SRCALPHA surface
+		target_surface = display_surface
+		temp_surf = None
+		if alpha is not None and alpha < 255:
+			w, h = display_surface.get_size()
+			temp_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+			target_surface = temp_surf
 
 		for i in range(1, len(orbit_points)):
 			distance = len(orbit_points) - i
 			fade_factor = max(0, min(255, int(255 * (distance / len(orbit_points)) * fade_scale)))
-			faded_color = (
-				int(self.color[0] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[0] * (fade_factor / 255)),
-				int(self.color[1] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[1] * (fade_factor / 255)),
-				int(self.color[2] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[2] * (fade_factor / 255)),
-			)
-			pygame.draw.line(display_surface, faded_color, orbit_points[i - 1], orbit_points[i], 1)
+			base_color = color_override if color_override is not None else self.color
+			r = int(base_color[0] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[0] * (fade_factor / 255))
+			g = int(base_color[1] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[1] * (fade_factor / 255))
+			b = int(base_color[2] * (1 - fade_factor / 255) + constants.COLOR_BACKGROUND[2] * (fade_factor / 255))
+			if temp_surf is not None:
+				# Apply overall alpha to the faded color
+				a = max(0, min(255, int(alpha * (1 - fade_factor / 255))))
+				color = (r, g, b, a)
+			else:
+				color = (r, g, b)
+			pygame.draw.line(target_surface, color, orbit_points[i - 1], orbit_points[i], 1)
 
-	def _draw_orbit_trail(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0, fade_scale=1.0, completed_fade_scale=0.7):
+		if temp_surf is not None:
+			display_surface.blit(temp_surf, (0, 0))
+
+	def _draw_orbit_trail(self, display_surface, distance_scale, screen_offset_x=0, screen_offset_y=0, fade_scale=1.0, completed_fade_scale=0.25):
 		if not self.draw_line:
 			return
 
 		completed_points = self._complete_orbit_points(distance_scale, screen_offset_x, screen_offset_y)
-		self._draw_point_trail(display_surface, completed_points, completed_fade_scale)
+		# Draw completed orbits in a very faded grey to distinguish them from live trails
+		# Use a low alpha for very high transparency (lower value = more transparent)
+		self._draw_point_trail(display_surface, completed_points, completed_fade_scale, color_override=(180, 180, 180), alpha=20)
 
 		current_points = self._orbit_points(distance_scale, screen_offset_x, screen_offset_y)
 		self._draw_point_trail(display_surface, current_points, fade_scale)
