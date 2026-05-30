@@ -30,7 +30,7 @@
 # Importing necessary libraries
 import panel as pn # For building the web interface
 import constants # For simulation constants like scale and colors
-from simulation.solarsystem_scale import calculate_scaled_sizes # For updating body sizes based on current scale
+from simulation.scale import calculate_scaled_sizes # For updating body sizes based on current scale
 from .canvas import sync_canvas_frame # For browser-side canvas rendering
 
 def advance_simulation(bodies, state):

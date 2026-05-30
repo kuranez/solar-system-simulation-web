@@ -1,7 +1,7 @@
 """Earth preset factory."""
 
 import constants
-from simulation.solarsystem_scale import calculate_scaled_sizes
+from simulation.scale import calculate_scaled_sizes
 
 from ..planet import Planet
 

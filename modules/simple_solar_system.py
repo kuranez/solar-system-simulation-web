@@ -3,7 +3,7 @@
 # Importing necessary libraries and modules
 import constants # For simulation constants like scale and colors
 from objects import Planet, create_sun
-from simulation.solarsystem_scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
+from simulation.scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
 
 # Function to create the solar system with the Sun, planets
 def create_solar_system():

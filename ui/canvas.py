@@ -114,7 +114,7 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  hudCtx.fill()
 		}
 
-		hudCtx.font = '16px sans-serif'
+		hudCtx.font = '16px monospace'
 		hudCtx.fillStyle = textColor
 		let textY = 22
 		if (payload.time_text) {
