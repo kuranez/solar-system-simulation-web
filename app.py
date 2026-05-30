@@ -14,9 +14,9 @@ import os
 import socket
 
 # Add directories to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'simulation')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'modules')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'ui')))
+repo_root = os.path.abspath(os.path.dirname(__file__))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
 
 import panel as pn # For building the web interface
 
@@ -27,11 +27,10 @@ from modules.simple_sun_earth import create_sun_earth_system
 from modules.simple_earth_moon import create_earth_moon_system
 from modules.simple_sun_earth_moon import create_sun_earth_moon_system
 
-
 # Importing UI handlers and CSS
 from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_LAYOUT_CSS, BUTTON_CSS
 from ui.canvas import SimulationCanvas, sync_canvas_frame
-from ui.ui_handlers import advance_simulation, apply_zoom_for_view, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
+from ui.ui_handlers import advance_simulation, apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, on_step, periodic_update, play_pause, stop_and_reset, update_simple_body_sizes, update_proportional_sun_earth_moon, update_simple_sun_earth, update_simple_earth_moon, update_body_radii, zoom_in, zoom_out
 
 
 # Initialize Panel extension
@@ -76,7 +75,7 @@ SIMULATION_VIEWS = {
         "base_scale": constants.DEFAULT_SCALE, 
         "scale_mode": "distance", # This view will use distance scaling for the zoom slider 
         "zoom_updater": None, # No custom updater, will use the default distance scaling logic in on_zoom_change
-    }
+    },
 }
 
 initial_view_name = "[Simple] Solar System"
@@ -127,6 +126,8 @@ button_stylesheets = [BUTTON_CSS]
 step_button = pn.widgets.Button(name="Next Frame", icon="player-step-forward", button_type="primary", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="success", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+slower_button = pn.widgets.Button(name="Slower", icon="minus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
+faster_button = pn.widgets.Button(name="Faster", icon="plus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 # zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
 # zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
@@ -211,13 +212,15 @@ zoom_slider.param.watch(on_zoom_change, 'value')
 # Attach event handlers to buttons
 step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
 play_button.on_click(lambda event: play_pause(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
+slower_button.on_click(lambda event: decrease_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
+faster_button.on_click(lambda event: increase_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 # reset_button.on_click(lambda event: stop_and_reset(event, state, screen, current_solarsystem, constants.COLOR_BACKGROUND, img_pane, play_button))
 # zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 # zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 
 # Layout for Panel UI
 # ---------------------------------------------
-controls = pn.Row(play_button, step_button, zoom_slider, view_select, align="center", sizing_mode="fixed", width=920, height=60, margin=0, css_classes=["app-controls"])
+controls = pn.Row(play_button, slower_button, faster_button, step_button, zoom_slider, view_select, align="center", sizing_mode="fixed", width=1120, height=60, margin=0, css_classes=["app-controls"])
 app = pn.Column(controls, canvas_view, sizing_mode="stretch_both", margin=0, css_classes=["app-shell"])
 
 

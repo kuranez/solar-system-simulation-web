@@ -121,6 +121,10 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  hudCtx.fillText(payload.time_text, 12, textY)
 		  textY += 20
 		}
+		if (payload.speed_text) {
+		  hudCtx.fillText(payload.speed_text, 12, textY)
+		  textY += 20
+		}
 		if (payload.scale_text) {
 		  hudCtx.fillText(payload.scale_text, 12, textY)
 		  textY += 20
@@ -263,8 +267,11 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	remaining_time = state.get("total_elapsed_time", 0.0) % (365.25 * 24 * 3600)
 	days = int(remaining_time // (24 * 3600))
 	time_text = f"Time: {years}y {days}d" if years > 0 else f"Time: {days}d"
-	meters_per_pixel = constants.AU / distance_scale if distance_scale else 0
-	scale_text = f"Scale: {meters_per_pixel:.2e} m/px"
+	meters_per_pixel = 1.0 / distance_scale if distance_scale else 0
+	au_per_pixel = meters_per_pixel / constants.AU if distance_scale else 0
+	scale_text = f"Scale: {meters_per_pixel:.2e} m/px | {au_per_pixel:.2e} AU/px"
+	frame_period = int(state.get("frame_period", 80))
+	speed_text = f"Speed: {frame_period} ms/frame ({1000.0 / max(1, frame_period):.1f} FPS)"
 
 	notifications = [f"{body.name} completed an orbit" for body in bodies if getattr(body, "orbit_complete_flash", 0) > 0]
 
@@ -279,6 +286,7 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		"offset_x": offset_x,
 		"offset_y": offset_y,
 		"time_text": time_text,
+		"speed_text": speed_text,
 		"scale_text": scale_text,
 		"notifications": notifications,
 		"max_trail_points": 1800,

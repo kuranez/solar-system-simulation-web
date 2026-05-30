@@ -18,7 +18,7 @@ WIDTH, HEIGHT = 1920, 1080
 COLOR_TEXT = (255, 255, 255) # Pure white for text
 COLOR_HUD_TEXT = (200, 200, 200)  # Slightly dimmer text for HUD
 COLOR_BACKGROUND = (15, 22, 36) # Match the app's CSS background tone
-FONT_1 = pygame.font.SysFont("monospace", 16)
+# FONT_1 = pygame.font.SysFont("monospace", 16)
 
 # General
 AU = 149.6e9  # Astronomical Unit in meters
@@ -32,7 +32,9 @@ earth_diameter = 12742e3  # Earth's diameter in meters
 PLANET_ZOOM_EXPONENT = 0.5  # Exponent for zoom scaling (0.5 means square root scaling)
 
 # Simulation Speed
-TIMESTEP = 3600 * 24.0 # Seconds in 1 day 
+# Reduce the global timestep to 1 hour to improve stability and make bodies
+# move less per rendered frame (prevents fast detachment of moons).
+TIMESTEP = 3600.0*12  # Seconds in 12 hours (0.5 days) - Adjusted for better stability
 
 # Solar System Colors
 COLOR_SUN = (252, 150, 1)

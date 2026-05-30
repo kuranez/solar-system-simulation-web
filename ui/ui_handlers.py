@@ -33,6 +33,40 @@ import constants # For simulation constants like scale and colors
 from simulation.scale import calculate_scaled_sizes # For updating body sizes based on current scale
 from .canvas import sync_canvas_frame # For browser-side canvas rendering
 
+
+SPEED_STEP_MS = 10
+MIN_FRAME_PERIOD = 1
+MAX_FRAME_PERIOD = 150
+
+
+def _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button):
+    if state.get('callback'):
+        state['callback'].stop()
+        state['callback'] = None
+
+    state['callback'] = pn.state.add_periodic_callback(
+        lambda: periodic_update(bodies, state, color_bg, canvas_view),
+        period=state.get('frame_period', 80)
+    )
+
+
+def _set_frame_period(state, period_ms):
+    state['frame_period'] = max(MIN_FRAME_PERIOD, min(MAX_FRAME_PERIOD, int(period_ms)))
+
+
+def increase_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
+    """Increase simulation speed by reducing the frame period in small steps."""
+    _set_frame_period(state, state.get('frame_period', 80) - SPEED_STEP_MS)
+    if state.get('is_playing'):
+        _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button)
+
+
+def decrease_simulation_speed(event, state, bodies, color_bg, canvas_view, play_button):
+    """Decrease simulation speed by increasing the frame period in small steps."""
+    _set_frame_period(state, state.get('frame_period', 80) + SPEED_STEP_MS)
+    if state.get('is_playing'):
+        _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button)
+
 def advance_simulation(bodies, state):
     """Advances the simulation by one logical frame.
 
@@ -207,11 +241,7 @@ def play_pause(event, state, bodies, color_bg, canvas_view, play_button):
         play_button.button_type = "danger"
         # Start periodic updates. Use a configurable period to lower CPU/network
         # pressure in slower browsers (Firefox). Default to 80ms (~12.5 FPS).
-        period = state.get('frame_period', 80)
-        state['callback'] = pn.state.add_periodic_callback(
-            lambda: periodic_update(bodies, state, color_bg, canvas_view),
-            period=period
-        )
+        _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button)
     else:
         state['is_playing'] = False
         play_button.name = "Play"
