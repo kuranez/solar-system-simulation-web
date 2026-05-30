@@ -152,14 +152,21 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		        trailState.active = [point]
 		        trailState.lastOrbitCount = currentOrbitCount
 		      } else {
+		        const last = trailState.active[trailState.active.length - 1]
+		        const spacing = activePayload.trail_sample_spacing_px || 2.5
+		        // Spatial sampling: Only store the point if the body moved significantly
+		        const movedEnough = !last || (Math.pow(point.x - last.x, 2) + Math.pow(point.y - last.y, 2) > spacing * spacing)
+
 		        if (currentOrbitCount > trailState.lastOrbitCount) {
 		          trailState.completed = trailState.active.length > 1 ? trailState.active.slice() : []
 		          trailState.active = []
 		          trailState.lastOrbitCount = currentOrbitCount
 		        }
-		        trailState.active.push(point)
-		        if (trailState.active.length > maxTrailPoints) {
-		          trailState.active = trailState.active.slice(-maxTrailPoints)
+		        if (movedEnough) {
+		          trailState.active.push(point)
+		          if (trailState.active.length > maxTrailPoints) {
+		            trailState.active.shift()
+		          }
 		        }
 		      }
 		      canvasState.trails[bodyKey] = trailState
@@ -511,14 +518,11 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		return {
 			"name": getattr(body, "name", "Body"),
 			"x": float(x),
-			"y": float(y),
+			"y": round(float(y), 1),
 			"radius": float(max(1, int(getattr(body, "radius", 1)))),
 			"color": _rgb(getattr(body, "color", (0, 0, 0))),
 			"draw_line": bool(getattr(body, "draw_line", True)),
 			"orbit_count": int(getattr(body, "orbit_count", 0)),
-			"orbit_min_distance": getattr(body, "orbit_min_distance", None),
-			"orbit_max_distance": getattr(body, "orbit_max_distance", None),
-			"orbit_delta_mean": getattr(body, "orbit_delta_mean", None),
 		}
 
 	years = int(state.get("total_elapsed_time", 0.0) // (365.25 * 24 * 3600))
@@ -535,6 +539,16 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame | Render x{render_stride:g}"
 	else:
 		speed_text = f"Step: {simulation_timestep / 86400.0:.1f} d/frame"
+
+	# Throttle HUD row generation to reduce object churn
+	hud_counter = state.get("_hud_counter", 0)
+	if reset or hud_counter <= 0:
+		hud_rows = _build_hud_rows(bodies)
+		state["_hud_cache"] = hud_rows
+		state["_hud_counter"] = 10  # Update HUD every 10 frames
+	else:
+		hud_rows = state.get("_hud_cache", [])
+		state["_hud_counter"] = hud_counter - 1
 
 	return {
 		"reset": bool(reset),
@@ -556,7 +570,7 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		"min_orbits_before_prune": int(state.get("min_orbits_before_prune", 1)),
 		"trail_sample_spacing_px": float(state.get("trail_sample_spacing_px", 2.5)),
 		"trail_fade_alpha": 0.028,
-		"hud_rows": _build_hud_rows(bodies),
+		"hud_rows": hud_rows,
 		"bodies": [_body_payload(body) for body in bodies],
 	}
 
