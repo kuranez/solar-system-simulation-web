@@ -61,6 +61,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 0.387, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 46.0e9,
+        "aphelion": 69.8e9,
         "radius": 4879e3 / 2,
         "mass": 0.33e24,
         "orbital_velocity": 47.40e3,
@@ -72,6 +73,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 0.723, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 107.5e9,
+        "aphelion": 108.9e9,
         "radius": 12104e3 / 2,
         "mass": 4.87e24,
         "orbital_velocity": 35.02e3,
@@ -83,6 +85,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 1.0, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 147.1e9,
+        "aphelion": 152.1e9,
         "radius": 12756e3 / 2,
         "mass": 5.97e24,
         "orbital_velocity": 29.78e3,
@@ -94,6 +97,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 1.524, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 206.7e9,
+        "aphelion": 249.2e9,
         "radius": 6792e3 / 2,
         "mass": 0.642e24,
         "orbital_velocity": 24.06e3,
@@ -105,6 +109,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 5.204, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 740.6e9,
+        "aphelion": 816.6e9,
         "radius": 142984e3 / 2,
         "mass": 1898e24,
         "orbital_velocity": 13.06e3,
@@ -116,6 +121,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 9.573, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 1357.6e9,
+        "aphelion": 1514.5e9,
         "radius": 120536e3 / 2,
         "mass": 568e24,
         "orbital_velocity": 9.68e3,
@@ -127,6 +133,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 19.165, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 2732.7e9,
+        "aphelion": 3000.0e9,
         "radius": 51118e3 / 2,
         "mass": 86.8e24,
         "orbital_velocity": 6.80e3,
@@ -138,6 +145,7 @@ BODIES_DATA = {
         "type": "planet",
         "position": 30.178, # Average distance from the Sun in AU (negative for left side)
         "perihelion": 4471.1e9,
+        "aphelion": 4558.0e9,
         "radius": 49528e3 / 2,
         "mass": 102e24,
         "orbital_velocity": 5.43e3,
@@ -303,6 +311,19 @@ BODIES_DATA = {
         "average_distance": 1882700e3,
         "orbital_velocity": 8200,
         "color": (180, 200, 255),
+    },
+    # Trans-Neptunian Objects (example with Pluto)
+    "Pluto": {
+        "name": "Pluto",
+        "type": "tno",
+        "position": 39.48, # Average distance from the Sun in AU (negative for left side)
+        "perihelion": 4436e9,
+        "aphelion": 7375e9,
+        "radius": 1188.3e3,
+        "mass": 1.303e22,
+        "orbital_velocity": 4700,
+        "is_inner": False,
+        "color": (200, 150, 150),
     },
 }
 
