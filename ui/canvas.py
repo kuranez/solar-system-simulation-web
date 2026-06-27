@@ -128,6 +128,20 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		      trailCtx.stroke()
 		    }
 		  }
+		  
+		  const drawStaticTrail = (points, alpha, color, lineWidth) => {
+		    if (!Array.isArray(points) || points.length < 2) {
+		      return
+		    }
+		    trailCtx.beginPath()
+		    trailCtx.moveTo(points[0].x, points[0].y)
+		    for (let i = 1; i < points.length; i += 1) {
+		      trailCtx.lineTo(points[i].x, points[i].y)
+		    }
+		    trailCtx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`
+		    trailCtx.lineWidth = lineWidth
+		    trailCtx.stroke()
+		  }
 
 		  for (const body of activePayload.bodies) {
 		    const point = { x: body.x, y: body.y }
@@ -159,14 +173,15 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		        const movedEnough = !last || (Math.pow(point.x - last.x, 2) + Math.pow(point.y - last.y, 2) > spacing * spacing)
 
 		        if (currentOrbitCount > trailState.lastOrbitCount) {
-		          if (trailState.active.length > 1) {
+		          if (trailState.active.length > 0) {
+		            trailState.active.push(point) // Add current point to close the gap
 		            trailState.completed.push({ points: trailState.active.slice() });
 		            // Keep only the most recent completed trail
 		            if (trailState.completed.length > 1) {
 		              trailState.completed.shift();
 		            }
 		          }
-		          trailState.active = []
+		          trailState.active = [point] // Start the new trail with the current point
 		          trailState.lastOrbitCount = currentOrbitCount
 		        }
 		        if (movedEnough) {
@@ -181,7 +196,7 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 
 		    // Draw all completed trails
 		    for (const trail of trailState.completed) {
-		      drawTrailPoints(trail.points, 0.5, currentColor, currentLineWidth, 0.24, true)
+		      drawStaticTrail(trail.points, 0.2, currentColor, currentLineWidth)
 		    }
 		    drawTrailPoints(trailState.active, 1.0, currentColor, currentLineWidth, 0.1, false)
 		  }
