@@ -3,7 +3,9 @@ from skyfield.timelib import Time
 
 import constants # For simulation constants like scale and colors
 from objects import Planet, create_sun
+from simulation.ephemeris import EphemerisManager
 from simulation.scale import calculate_scaled_sizes # For calculating scaled sizes of planets based on current scale
+from simulation.ephemeris import EphemerisManager # For loading Skyfield ephemeris data
 
 def create_solar_system_skyfield():
     """Create objects in the solar system using Skyfield for real positions."""
@@ -12,7 +14,7 @@ def create_solar_system_skyfield():
 
     # Load Skyfield data
     # Use most recent DE440s ephemeris for accurate planetary positions
-    eph = load('de440s.bsp')
+    eph = EphemerisManager.get()
     # Load timescale and get current time
     ts = load.timescale()
     # Set time to now for current positions, or you can set it to a specific date/time

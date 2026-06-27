@@ -316,7 +316,7 @@ class Body:
 		completed_points = self._complete_orbit_points(distance_scale, screen_offset_x, screen_offset_y)
 		# Draw completed orbits in a very faded grey to distinguish them from live trails
 		# Use a low alpha for very high transparency (lower value = more transparent)
-		self._draw_point_trail(display_surface, completed_points, completed_fade_scale, color_override=(180, 180, 180), alpha=20)
+		self._draw_point_trail(display_surface, completed_points, completed_fade_scale, color_override=(180, 180, 180), alpha=10)
 
 		current_points = self._orbit_points(distance_scale, screen_offset_x, screen_offset_y)
 		self._draw_point_trail(display_surface, current_points, fade_scale)

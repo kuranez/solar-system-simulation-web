@@ -309,25 +309,36 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 
 
 def _rgb(value, default=(0, 0, 0)):
+	"""Convert a value to an RGB list of integers, or return the default if invalid."""
+	# If the value is a list or tuple with at least 3 elements, return the first three elements as integers.
 	if isinstance(value, (list, tuple)) and len(value) >= 3:
 		return [int(value[0]), int(value[1]), int(value[2])]
+	# Return the default RGB value as integers if the input is not valid.
 	return [int(default[0]), int(default[1]), int(default[2])]
 
 
 def _parent_of(body):
+	"""Return the parent body of a given body, if it exists, or None otherwise."""
 	return getattr(body, "parent_body", None) or getattr(body, "child_of", None)
 
 
 def _distance_between(body_a, body_b):
+	"""Calculate the Euclidean distance between two bodies in meters."""
+	# If either body is None, return 0.0 as the distance.
 	if body_a is None or body_b is None:
 		return 0.0
+	# Else calculate the distance using the Pythagorean theorem.
 	return (((body_a.x - body_b.x) ** 2 + (body_a.y - body_b.y) ** 2) ** 0.5)
 
 
 def _body_children_map(bodies):
+	"""Build a mapping of parent bodies to their children, using both authoritative and legacy links."""
+	# Use a defaultdict to store the mapping of parent bodies to their children.
 	children_map = defaultdict(list)
+	# Use a set to track seen children for each parent to avoid duplicates.
 	seen_children = defaultdict(set)
 
+	# For each body, add its children from the `children` attribute if available.
 	for body in bodies:
 		for child in getattr(body, "children", []) or []:
 			if child is None or child in seen_children[body]:
@@ -335,6 +346,7 @@ def _body_children_map(bodies):
 			children_map[body].append(child)
 			seen_children[body].add(child)
 
+	# Fallback for legacy parent_body links: if a body has a parent, add it to the parent's children list.
 	for body in bodies:
 		parent = _parent_of(body)
 		if parent is not None and body not in seen_children[parent]:
@@ -345,61 +357,95 @@ def _body_children_map(bodies):
 
 
 def _build_hud_rows(bodies):
+	"""Build a list of HUD rows for each body, including distance and orbit information."""
+	# Build a mapping of parent bodies to their children.
 	children_map = _body_children_map(bodies)
+	# Sun reference for distance calculations.
 	sun = next((body for body in bodies if getattr(body, "is_sun", False)), None)
+	# Rows to be displayed in the HUD.
 	rows = []
+	# Use a set to track visited bodies to avoid duplicates in the HUD.
 	visited = set()
 
+	# Distance label for a body relative to its parent or the sun.
 	def _distance_label(body, parent):
 		if parent is None:
 			return "stationary"
 
 		distance = _distance_between(body, parent)
 		if getattr(parent, "is_sun", False):
+			# Distance to sun if parent is the sun
 			return f"{distance / 1000:,.0f} km ({distance / constants.AU:.2f} AU)"
 
+		# Distance to parent body if parent is not the sun
 		return f"{distance / 1000:,.0f} km from {parent.name}"
 
+	# Minimum and maximum orbit distance rows for a body, if available.	
 	def _orbit_minmax_rows(body, parent):
 		if getattr(body, "static_body", False):
 			return []
 
 		measured_min = getattr(body, "orbit_min_distance", None)
 		measured_max = getattr(body, "orbit_max_distance", None)
-		measured_mean = getattr(body, "orbit_delta_mean", None)
+
 		ref_min = getattr(body, "perihelion", None) or getattr(body, "perigee", None) or getattr(body, "average_distance", None)
 		ref_max = getattr(body, "aphelion", None) or getattr(body, "apogee", None) or getattr(body, "average_distance", None)
+
 		if ref_min is None and ref_max is None and measured_min is None and measured_max is None:
 			return []
 
 		rows = []
+
+		# =========================
+		# GLOBAL Δ
+		# =========================
+		delta_total = None
+		if (
+			measured_min is not None and measured_max is not None
+			and ref_min is not None and ref_max is not None
+		):
+			delta_min = (measured_min - ref_min) / ref_min
+			delta_max = (measured_max - ref_max) / ref_max
+			delta_total = ((delta_min + delta_max) / 2.0) * 100.0
+
+		# =========================
+		# MIN ROW
+		# =========================
 		if ref_min is not None:
 			parts = []
 			if getattr(parent, "is_sun", False):
 				parts.append(f"min: {ref_min/1000:,.0f} km ({ref_min/constants.AU:.2f} AU)")
 			else:
 				parts.append(f"min: {ref_min/1000:,.0f} km")
+
 			if measured_min is not None and ref_min:
-				delta_min = ((measured_min - ref_min) / ref_min) * 100.0
-				parts.append(f"Δmin: {delta_min:+.2f}%")
-			if measured_mean is not None and ref_min:
-				parts.append(f"Δmean: {(measured_mean / ref_min) * 100.0:.2f}%")
+				delta_min_only = ((measured_min - ref_min) / ref_min) * 100.0
+				parts.append(f"Δmin: {delta_min_only:+.2f}%")
+
 			rows.append(" | ".join(parts))
+
+		# =========================
+		# MAX ROW
+		# =========================
 		if ref_max is not None:
 			parts = []
 			if getattr(parent, "is_sun", False):
 				parts.append(f"max: {ref_max/1000:,.0f} km ({ref_max/constants.AU:.2f} AU)")
 			else:
 				parts.append(f"max: {ref_max/1000:,.0f} km")
+
 			if measured_max is not None and ref_max:
-				delta_max = ((measured_max - ref_max) / ref_max) * 100.0
-				parts.append(f"Δmax: {delta_max:+.2f}%")
-			if measured_mean is not None and ref_max:
-				parts.append(f"Δmean: {(measured_mean / ref_max) * 100.0:.2f}%")
+				delta_max_only = ((measured_max - ref_max) / ref_max) * 100.0
+				parts.append(f"Δmax: {delta_max_only:+.2f}%")
+
+			if delta_total is not None:
+				parts.append(f"Δ: {delta_total:+.2f}%")
+
 			rows.append(" | ".join(parts))
 
 		return rows
 
+	# Row text for a body, including distance and orbit information.
 	def _row_text(body, parent, depth):
 		prefix = "- " if depth > 0 else ""
 		if getattr(body, "static_body", False):
@@ -476,6 +522,7 @@ def _build_hud_rows(bodies):
 				pass
 		return text
 
+	# Recursively walk the body hierarchy to build HUD rows with indentation based on depth.
 	def _walk(body, parent, depth):
 		if body in visited:
 			return
@@ -501,9 +548,10 @@ def _build_hud_rows(bodies):
 	return rows
 
 
-
+# Build the data payload for a single simulation frame.
 def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	"""Create the compact browser-canvas payload for one simulation frame."""
+	# Extract relevant state values for easier access
 	distance_scale = state["distance_scale"]
 	offset_x = state["offset_x"]
 	offset_y = state["offset_y"]
@@ -511,9 +559,13 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	canvas_height = constants.HEIGHT
 
 	def _screen_position(body):
+		"""Compute the screen position of a body based on its world coordinates 
+		and the current scale and offset."""
 		return body._screen_position(distance_scale, offset_x, offset_y)
 
+
 	def _body_payload(body):
+		"""Build the payload for a single body to be sent to the browser canvas."""
 		x, y = _screen_position(body)
 		return {
 			"name": getattr(body, "name", "Body"),
@@ -524,7 +576,8 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 			"draw_line": bool(getattr(body, "draw_line", True)),
 			"orbit_count": int(getattr(body, "orbit_count", 0)),
 		}
-
+	
+	# Compute the time and scale text for the HUD display
 	years = int(state.get("total_elapsed_time", 0.0) // (365.25 * 24 * 3600))
 	remaining_time = state.get("total_elapsed_time", 0.0) % (365.25 * 24 * 3600)
 	days = int(remaining_time // (24 * 3600))
@@ -550,6 +603,8 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 		hud_rows = state.get("_hud_cache", [])
 		state["_hud_counter"] = hud_counter - 1
 
+	# Return the complete frame data payload for the canvas, 
+	# including body positions, colors, and HUD information.
 	return {
 		"reset": bool(reset),
 		"scene_id": int(scene_token),
@@ -575,7 +630,7 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	}
 
 
-
+# Push the current frame state to a SimulationCanvas component.
 def sync_canvas_frame(canvas_view, bodies, state, color_bg, *, scene_token, reset=False):
 	"""Push the current frame state to a SimulationCanvas component."""
 	canvas_view.frame_data = build_frame_data(

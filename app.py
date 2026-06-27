@@ -29,6 +29,12 @@ from ui.css import GLOBAL_THEME_CSS, CUSTOM_SELECT_CSS, CUSTOM_SLIDER_CSS, APP_L
 from ui.canvas import SimulationCanvas, sync_canvas_frame
 from ui.ui_handlers import apply_zoom_for_view, decrease_simulation_speed, increase_simulation_speed, play_pause, stop_and_reset, refresh_speed_display
 
+# Importing the EphemerisManager to load Skyfield ephemeris data
+from simulation.ephemeris import EphemerisManager
+
+# Load the ephemeris data at startup to avoid delays during simulation
+EphemerisManager.load()
+EphemerisManager.get()  # Ensure the ephemeris is loaded and ready for use
 
 # Initialize Panel extension
 pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
@@ -83,13 +89,10 @@ view_select = pn.widgets.Select(
 
 # Buttons for controling the simulation
 button_stylesheets = [BUTTON_CSS]
-# step_button = pn.widgets.Button(name="Next Frame", icon="player-step-forward", button_type="primary", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 play_button = pn.widgets.Button(name="Play", icon="player-play", button_type="success", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 reset_button = pn.widgets.Button(name="Reset", icon="player-stop", button_type="warning", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 slower_button = pn.widgets.Button(name="Slower", icon="minus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
 faster_button = pn.widgets.Button(name="Faster", icon="plus", button_type="default", width=84, height=42, margin=0, css_classes=["big-button"], stylesheets=button_stylesheets)
-# zoom_in_button = pn.widgets.Button(name="Zoom In", button_type="primary")
-# zoom_out_button = pn.widgets.Button(name="Zoom Out", button_type="primary")
 
 # Browser-side canvas view.
 canvas_view = SimulationCanvas(sizing_mode="stretch_both", margin=0, align="center", css_classes=["app-viewer"])
@@ -146,13 +149,10 @@ def update_view(event):
 view_select.param.watch(update_view, 'value')
 
 # Attach event handlers to buttons
-# step_button.on_click(lambda event: on_step(event, current_solarsystem, state, constants.COLOR_BACKGROUND, canvas_view))
 play_button.on_click(lambda event: play_pause(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 reset_button.on_click(lambda event: stop_and_reset(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 slower_button.on_click(lambda event: decrease_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
 faster_button.on_click(lambda event: increase_simulation_speed(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view, play_button))
-# zoom_in_button.on_click(lambda event: zoom_in(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
-# zoom_out_button.on_click(lambda event: zoom_out(event, state, current_solarsystem, constants.COLOR_BACKGROUND, canvas_view))
 
 # Layout for Panel UI
 # ---------------------------------------------

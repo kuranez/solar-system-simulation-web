@@ -166,6 +166,6 @@ def render_hud(screen, bodies, state):
             continue
         rendered.add(root)
         _render_row(root, None, 0)
-
+    
 
 
