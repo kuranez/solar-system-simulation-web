@@ -135,11 +135,11 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		    const currentOrbitCount = typeof body.orbit_count === 'number' ? body.orbit_count : 0
 		    const storedTrailState = canvasState.trails[bodyKey]
 		    const trailState = (storedTrailState && typeof storedTrailState === 'object' && !Array.isArray(storedTrailState)) ? storedTrailState : {
-		      completed: [],
+		      completed: null,
 		      active: [],
 		      lastOrbitCount: currentOrbitCount,
 		    }
-		    trailState.completed = Array.isArray(trailState.completed) ? trailState.completed : []
+		    trailState.completed = Array.isArray(trailState.completed) && trailState.completed.length > 0 ? { points: trailState.completed.slice(), alpha: 0.78 } : null
 		    trailState.active = Array.isArray(trailState.active) ? trailState.active : []
 		    trailState.lastOrbitCount = typeof trailState.lastOrbitCount === 'number' ? trailState.lastOrbitCount : currentOrbitCount
 		    const currentColor = body.color || [200, 200, 200]
@@ -148,7 +148,7 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 
 		    if (updateHistory) {
 		      if (!bodyCanDrawTrail) {
-		        trailState.completed = []
+		        trailState.completed = null
 		        trailState.active = [point]
 		        trailState.lastOrbitCount = currentOrbitCount
 		      } else {
@@ -158,9 +158,16 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		        const movedEnough = !last || (Math.pow(point.x - last.x, 2) + Math.pow(point.y - last.y, 2) > spacing * spacing)
 
 		        if (currentOrbitCount > trailState.lastOrbitCount) {
-		          trailState.completed = trailState.active.length > 1 ? trailState.active.slice() : []
+		          trailState.completed = trailState.active.length > 1 ? { points: trailState.active.slice(), alpha: 1.0 } : null
 		          trailState.active = []
 		          trailState.lastOrbitCount = currentOrbitCount
+		        }
+		        // Fade the completed orbit each frame
+		        if (trailState.completed && trailState.completed.alpha > 0) {
+		          trailState.completed.alpha = Math.max(0, trailState.completed.alpha - 0.008)
+		          if (trailState.completed.alpha <= 0) {
+		            trailState.completed = null
+		          }
 		        }
 		        if (movedEnough) {
 		          trailState.active.push(point)
@@ -172,8 +179,8 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		      canvasState.trails[bodyKey] = trailState
 		    }
 
-		    if (trailState.completed.length > 0) {
-		      drawTrailPoints(trailState.completed, 0.78, [184, 184, 184], currentLineWidth, 0.24, true)
+		    if (trailState.completed && trailState.completed.alpha > 0) {
+		      drawTrailPoints(trailState.completed.points, 0.78 * trailState.completed.alpha, [184, 184, 184], currentLineWidth, 0.24, true)
 		    }
 		    drawTrailPoints(trailState.active, 1.0, currentColor, currentLineWidth, 0.1, false)
 		  }
