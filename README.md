@@ -76,6 +76,7 @@ solar-system-simulation-web/
 
 ## 📦 Dependencies
 
+- **`skyfield`**: For real planet positions.
 - **`pygame`**: For off-screen rendering of the simulation.
 - **`panel`**: For building the web interface and serving the application.
 - **`numpy` & `math`**: For numerical operations, particularly in converting Pygame surfaces.
