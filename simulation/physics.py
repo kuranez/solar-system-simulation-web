@@ -50,7 +50,7 @@ def find_sun(current_solarsystem):
 
 def advance_body(body, current_solarsystem, timestep=None, frame_timestep=None):
 	"""Advance a body using Newtonian gravity against the supplied system."""
-	if getattr(body, "static_body", False):
+	if getattr(body, "static_body", False) or getattr(body, "is_sun", False):
 		return
 
 	total_fx = 0.0

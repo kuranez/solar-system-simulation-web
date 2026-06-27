@@ -135,12 +135,12 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		    const currentOrbitCount = typeof body.orbit_count === 'number' ? body.orbit_count : 0
 		    const storedTrailState = canvasState.trails[bodyKey]
 		    const trailState = (storedTrailState && typeof storedTrailState === 'object' && !Array.isArray(storedTrailState)) ? storedTrailState : {
-		      completed: null,
+		      completed: [],
 		      active: [],
 		      lastOrbitCount: currentOrbitCount,
 		    }
-		    trailState.completed = Array.isArray(trailState.completed) && trailState.completed.length > 0 ? { points: trailState.completed.slice(), alpha: 0.78 } : null
-		    trailState.active = Array.isArray(trailState.active) ? trailState.active : []
+		    trailState.completed = Array.isArray(trailState.completed) ? trailState.completed : [];
+		    trailState.active = Array.isArray(trailState.active) ? trailState.active : [];
 		    trailState.lastOrbitCount = typeof trailState.lastOrbitCount === 'number' ? trailState.lastOrbitCount : currentOrbitCount
 		    const currentColor = body.color || [200, 200, 200]
 		    const currentLineWidth = Math.max(1, Math.min(3, (body.radius || 1) * 0.12))
@@ -148,26 +148,26 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 
 		    if (updateHistory) {
 		      if (!bodyCanDrawTrail) {
-		        trailState.completed = null
+		        trailState.completed = []
 		        trailState.active = [point]
 		        trailState.lastOrbitCount = currentOrbitCount
 		      } else {
 		        const last = trailState.active[trailState.active.length - 1]
-		        const spacing = activePayload.trail_sample_spacing_px || 2.5
+		        const baseSpacing = activePayload.trail_sample_spacing_px || 2.5
 		        // Spatial sampling: Only store the point if the body moved significantly
+		        const spacing = Math.max(0.5, baseSpacing / Math.max(1.0, activePayload.render_stride || 1.0));
 		        const movedEnough = !last || (Math.pow(point.x - last.x, 2) + Math.pow(point.y - last.y, 2) > spacing * spacing)
 
 		        if (currentOrbitCount > trailState.lastOrbitCount) {
-		          trailState.completed = trailState.active.length > 1 ? { points: trailState.active.slice(), alpha: 1.0 } : null
+		          if (trailState.active.length > 1) {
+		            trailState.completed.push({ points: trailState.active.slice() });
+		            // Keep only the most recent completed trail
+		            if (trailState.completed.length > 1) {
+		              trailState.completed.shift();
+		            }
+		          }
 		          trailState.active = []
 		          trailState.lastOrbitCount = currentOrbitCount
-		        }
-		        // Fade the completed orbit each frame
-		        if (trailState.completed && trailState.completed.alpha > 0) {
-		          trailState.completed.alpha = Math.max(0, trailState.completed.alpha - 0.008)
-		          if (trailState.completed.alpha <= 0) {
-		            trailState.completed = null
-		          }
 		        }
 		        if (movedEnough) {
 		          trailState.active.push(point)
@@ -179,8 +179,9 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		      canvasState.trails[bodyKey] = trailState
 		    }
 
-		    if (trailState.completed && trailState.completed.alpha > 0) {
-		      drawTrailPoints(trailState.completed.points, 0.78 * trailState.completed.alpha, [184, 184, 184], currentLineWidth, 0.24, true)
+		    // Draw all completed trails
+		    for (const trail of trailState.completed) {
+		      drawTrailPoints(trail.points, 0.5, currentColor, currentLineWidth, 0.24, true)
 		    }
 		    drawTrailPoints(trailState.active, 1.0, currentColor, currentLineWidth, 0.1, false)
 		  }
