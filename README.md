@@ -53,12 +53,12 @@ solar-system-simulation-web/
 │   ├── planet.py           
 │   ├── moon.py             
 │   ├── asteroid.py         
-│   └── presets/            
+│   └── presets/                # Contains presets for sun, earth, moon, etc.     
 ├── ui/                     # UI components and rendering helpers
 │   ├── css.py
 │   ├── canvas.py
 │   ├── hud.py
-│   ├── screen.py
+│   ├── screen.py               # For backwards compatibility
 │   └── ui_handlers.py
 ├── simulation/             # Core simulation engine and scaling utilities
 │   ├── physicss.py
@@ -74,7 +74,6 @@ solar-system-simulation-web/
 - **`pygame`**: For off-screen rendering of the simulation.
 - **`panel`**: For building the web interface and serving the application.
 - **`numpy` & `math`**: For numerical operations, particularly in converting Pygame surfaces.
-- **`Pillow`**: For image processing and handling the PNG conversion.
 
 ---
 
