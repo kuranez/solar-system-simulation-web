@@ -31,11 +31,12 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 ---
 
 ## 💡 Features
-
-- **Interactive Simulation Controls:** Play, pause, and advance the simulation frame-by-frame.
-- **Multiple Simulation Views:** Easily switch between different scenarios, such as the full solar system or a simple Sun-Earth system.
-- **Web App built using Panel:** The entire user interface is built with the powerful and flexible Panel library.
-- **Off-Screen Pygame Rendering:** Utilizes Pygame for high-performance, off-screen rendering of the simulation, served through the Panel web interface.
+- **High-Precision Physics:** Utilizes JPL ephemeris data via Skyfield for accurate initial planet positions and velocities. All planetary data (mass, radius, orbital parameters) is based on NASA's fact sheets.
+- **Live Interactive Rendering:** A client-side HTML5 Canvas provides smooth, responsive panning and zooming without waiting for the server.
+- **Advanced Orbit Trails:** Completed orbits are shown with a distinct, solid color, while the active trail has a smooth gradient fade for visual clarity.
+- **Dynamic HUD:** The Heads-Up Display provides real-time data on simulation time, speed, scale, and detailed orbital information for each celestial body.
+- **Multiple Simulation Views:** Easily switch between different scenarios, from a simple Sun-Earth system to the full JPL-powered solar system.
+- **Flexible Controls:** Adjust simulation speed, play/pause, and reset the view.
 
 ---
 
@@ -44,32 +45,14 @@ Web implementation of my previous [Solar System Simulation](https://github.com/k
 ```yaml
 solar-system-simulation-web/
 │
-├── app.py                  # Main application entry point. Initializes Panel UI, state, and callbacks.
-├── constants.py            # Central file for simulation constants (physics, colors, scaling).
-├── modules/                # Simulation presets and helper generators
-│   ├── skyfield_solar_system.py 
-│   ├── simple_solar_system.py 
-│   ├── simple_sun_and_earth.py 
-│   ├── simple_sun_earth_moon.py 
-│   └── simple_earth_moon.py 
-├── objects/                # Runtime body definitions and presets
-│   ├── base.py             
-│   ├── planet.py           
-│   ├── moon.py             
-│   ├── asteroid.py         
-│   └── presets/               
-├── ui/                     # UI components and rendering helpers
-│   ├── css.py
-│   ├── canvas.py
-│   ├── hud.py
-│   └── ui_handlers.py
-├── simulation/             # Core simulation engine and scaling utilities
-│   ├── ephemeris.py
-│   ├── physics.py
-│   ├── scale.py
-│   └── scene.py
-├── requirements.txt
-└── README.md
+├── app.py              # Main application entry point. Initializes Panel UI, state, and callbacks.
+├── constants.py        # Central file for physical constants, colors, and celestial body data.
+├── modules/            # Simulation view generators (e.g., simple systems, JPL solar system).
+├── objects/            # `Body` class definition and subclasses for planets, moons, etc.
+├── simulation/         # Core physics engine, ephemeris integration, and scaling utilities.
+├── ui/                 # UI components: client-side canvas, HUD logic, and control handlers.
+├── requirements.txt    # Project dependencies.
+└── README.md           # This file.
 ```
 
 ---
