@@ -61,7 +61,7 @@ solar-system-simulation-web/
 │   ├── screen.py               # For backwards compatibility
 │   └── ui_handlers.py
 ├── simulation/             # Core simulation engine and scaling utilities
-│   ├── physicss.py
+│   ├── physics.py
 │   └── scale.py
 ├── requirements.txt
 └── README.md
