@@ -39,6 +39,8 @@ from .canvas import sync_canvas_frame # For browser-side canvas rendering
 SPEED_STEP_MS = 10
 MIN_FRAME_PERIOD = 10
 MAX_FRAME_PERIOD = 500
+MAX_PERIODIC_TIME_SCALE = 3.0
+MAX_SUBSTEPS_PER_TICK = 240
 SIMULATION_SPEED_PRESETS = [
     {"simulation_timestep": 600.0, "render_stride": 1.0},
     {"simulation_timestep": 1800.0, "render_stride": 1.0},
@@ -147,6 +149,7 @@ def advance_simulation(bodies, state, time_scale=1.0):
     simulation_timestep = frame_timestep * max(0.0, float(time_scale))
     base_step_dt = min(dynamic_ts)
     substeps = max(1, int(round(simulation_timestep / base_step_dt)))
+    substeps = min(substeps, MAX_SUBSTEPS_PER_TICK)
     step_dt = simulation_timestep / substeps
 
     for _ in range(substeps):
@@ -256,12 +259,16 @@ def on_step(event, bodies, state, color_bg, canvas_view):
 
 def periodic_update(bodies, state, color_bg, canvas_view):
     """Function called periodically when the simulation is playing."""
+    if not state.get('is_playing'):
+        return
+
     now = time.monotonic()
     last_tick_time = state.get('last_tick_time', now)
     state['last_tick_time'] = now
     nominal_period = max(1, int(state.get('frame_period', 10))) / 1000.0
     elapsed = max(0.0, now - last_tick_time)
     time_scale = elapsed / nominal_period if nominal_period > 0 else 1.0
+    time_scale = max(0.25, min(MAX_PERIODIC_TIME_SCALE, time_scale))
     advance_simulation(bodies, state, time_scale=time_scale)
     render_stride = max(1.0, float(state.get('render_stride', 1.0)))
     render_skip_counter = float(state.get('render_skip_counter', 0.0)) + 1.0

@@ -61,7 +61,7 @@ state = {
     'offset_x': width // 2,
     'offset_y': height // 2,
     'total_elapsed_time': 0.0,
-    'frame_period': 10,
+    'frame_period': 33,
     'scene_token': 1,
     'render_stride': 1.0,
     'render_skip_counter': 0.0,
