@@ -77,8 +77,9 @@ def _restart_periodic_callback(bodies, state, color_bg, canvas_view, play_button
     )
 
 
-def _set_frame_period(state, period_ms):
-    state['frame_period'] = max(MIN_FRAME_PERIOD, min(MAX_FRAME_PERIOD, int(period_ms)))
+# def _set_frame_period(state, period_ms):
+#     state['frame_period'] = max(MIN_FRAME_PERIOD, min(MAX_FRAME_PERIOD, int(period_ms)))
+
 
 def _step_simulation_timestep(state, direction):
     current_timestep = float(state.get('simulation_timestep', constants.TIMESTEP))
@@ -99,9 +100,9 @@ def _step_simulation_timestep(state, direction):
     return preset
 
 
-def _sync_speed_status(state):
-    # Removed as speed status is now only displayed in the HUD.
-    pass
+# def _sync_speed_status(state):
+#     # Removed as speed status is now only displayed in the HUD.
+#     pass
 
 
 

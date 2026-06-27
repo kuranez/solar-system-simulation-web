@@ -48,7 +48,7 @@ def build_simulation_views():
 	from modules.simple_solar_system import create_solar_system
 	from modules.simple_sun_earth import create_sun_earth_system
 	from modules.simple_sun_earth_moon import create_sun_earth_moon_system
-
+	from modules.solar_system import create_solar_system_skyfield
 	return {
 		"[Simple] Sun and Earth": {
 			"title": "Simple Sun and Earth System",
@@ -86,6 +86,17 @@ def build_simulation_views():
 			"title": "Simple Solar System (Planets only, no asteroids)",
 			"description": "A simulation of the simple solar system with planets only.",
 			"generator": create_solar_system,
+			"base_scale": constants.DEFAULT_SCALE,
+			"scale_mode": "distance",
+			"scene": {
+				"simulation_timestep": constants.TIMESTEP * 2,
+			},
+			**TRAIL_RETENTION,
+		},
+		"[JPL] Solar System": {
+			"title": "JPL Ephemeris Solar System",
+			"description": "A simulation of the solar system using JPL ephemeris data.",
+			"generator": create_solar_system_skyfield,
 			"base_scale": constants.DEFAULT_SCALE,
 			"scale_mode": "distance",
 			"scene": {
