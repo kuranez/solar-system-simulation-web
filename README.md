@@ -3,6 +3,9 @@
     <a href="https://www.python.org/" target="_blank">
         <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
     </a>
+    <a href="https://rhodesmill.org/skyfield/" target="_blank">
+        <img src="https://img.shields.io/badge/Skyfield-00008B?style=for-the-badge" alt="Pygame"/>
+    </a>
     <a href="https://www.pygame.org" target="_blank">
         <img src="https://img.shields.io/badge/Pygame-62B66B?style=for-the-badge&logo=pygame&logoColor=white" alt="Pygame"/>
     </a>
@@ -44,6 +47,7 @@ solar-system-simulation-web/
 ├── app.py                  # Main application entry point. Initializes Panel UI, state, and callbacks.
 ├── constants.py            # Central file for simulation constants (physics, colors, scaling).
 ├── modules/                # Simulation presets and helper generators
+│   ├── skyfield_solar_system.py 
 │   ├── simple_solar_system.py 
 │   ├── simple_sun_and_earth.py 
 │   ├── simple_sun_earth_moon.py 
@@ -53,16 +57,17 @@ solar-system-simulation-web/
 │   ├── planet.py           
 │   ├── moon.py             
 │   ├── asteroid.py         
-│   └── presets/                # Contains presets for sun, earth, moon, etc.     
+│   └── presets/               
 ├── ui/                     # UI components and rendering helpers
 │   ├── css.py
 │   ├── canvas.py
 │   ├── hud.py
-│   ├── screen.py               # For backwards compatibility
 │   └── ui_handlers.py
 ├── simulation/             # Core simulation engine and scaling utilities
+│   ├── ephemeris.py
 │   ├── physics.py
-│   └── scale.py
+│   ├── scale.py
+│   └── scene.py
 ├── requirements.txt
 └── README.md
 ```
@@ -71,6 +76,7 @@ solar-system-simulation-web/
 
 ## 📦 Dependencies
 
+- **`skyfield`**: For real planet positions.
 - **`pygame`**: For off-screen rendering of the simulation.
 - **`panel`**: For building the web interface and serving the application.
 - **`numpy` & `math`**: For numerical operations, particularly in converting Pygame surfaces.
