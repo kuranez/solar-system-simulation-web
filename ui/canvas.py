@@ -86,9 +86,9 @@ class SimulationCanvas(pn.reactive.ReactiveHTML):
 		  const maxTrailPoints = activePayload.max_trail_points || 1800
 		  const AU_METERS = 149597870700
 		  const effectiveDistanceScale = (typeof activePayload.distance_scale === 'number' ? activePayload.distance_scale : 0) * canvasState.viewZoom
-		  const metersPerPixel = effectiveDistanceScale ? 1.0 / effectiveDistanceScale : 0
-		  const auPerPixel = metersPerPixel / AU_METERS
-		  const scaleText = effectiveDistanceScale ? `Scale: ${metersPerPixel.toExponential(2)} m/px | ${auPerPixel.toExponential(2)} AU/px` : activePayload.scale_text
+		  const kmPerPixel = effectiveDistanceScale ? (1.0 / effectiveDistanceScale) / 1000.0 : 0
+		  const auPerPixel = kmPerPixel * 1000.0 / AU_METERS
+		  const scaleText = effectiveDistanceScale ? `Scale: ${kmPerPixel.toExponential(2)} km/px | ${auPerPixel.toExponential(2)} AU/px` : activePayload.scale_text
 
 		  if (sceneChanged || activePayload.reset) {
 		    canvasState.trails = {}
@@ -604,10 +604,10 @@ def build_frame_data(bodies, state, color_bg, *, scene_token, reset=False):
 	years = int(state.get("total_elapsed_time", 0.0) // (365.25 * 24 * 3600))
 	remaining_time = state.get("total_elapsed_time", 0.0) % (365.25 * 24 * 3600)
 	days = int(remaining_time // (24 * 3600))
-	time_text = f"Time: {years}y {days}d" if years > 0 else f"Time: {days}d"
-	meters_per_pixel = 1.0 / distance_scale if distance_scale else 0
-	au_per_pixel = meters_per_pixel / constants.AU if distance_scale else 0
-	scale_text = f"Scale: {meters_per_pixel:.2e} m/px | {au_per_pixel:.2e} AU/px"
+	time_text = f"Time: {years}y {days}d" if years > 0 else f"Time: {days}d"	
+	km_per_pixel = (1.0 / distance_scale) / 1000.0 if distance_scale else 0
+	au_per_pixel = (km_per_pixel * 1000.0) / constants.AU if distance_scale else 0
+	scale_text = f"Scale: {km_per_pixel:.2e} km/px | {au_per_pixel:.2e} AU/px"
 	frame_period = int(state.get("frame_period", 80))
 	simulation_timestep = float(state.get("simulation_timestep", constants.TIMESTEP))
 	render_stride = float(state.get("render_stride", 1.0))
