@@ -43,7 +43,7 @@ pn.extension(raw_css=[GLOBAL_THEME_CSS, APP_LAYOUT_CSS])
 width, height = constants.WIDTH, constants.HEIGHT
 
 SIMULATION_VIEWS = build_simulation_views()
-initial_view_name = "[Simple] Solar System"
+initial_view_name = "[JPL] Solar System"
 
 def choose_serve_port(preferred_port=5000):
     try:
