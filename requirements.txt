@@ -3,3 +3,5 @@ panel==1.9.2
 param==2.4.0
 Pillow==12.2.0
 pygame==2.6.1
+skyfield==1.48
+jplephem==2.24
