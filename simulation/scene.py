@@ -48,7 +48,7 @@ def build_simulation_views():
 	from modules.simple_solar_system import create_solar_system
 	from modules.simple_sun_earth import create_sun_earth_system
 	from modules.simple_sun_earth_moon import create_sun_earth_moon_system
-	from modules.solar_system import create_solar_system_skyfield
+	from modules.skyfield_solar_system import create_solar_system_skyfield
 	return {
 		"[Simple] Sun and Earth": {
 			"title": "Simple Sun and Earth System",
